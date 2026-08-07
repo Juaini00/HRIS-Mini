@@ -232,7 +232,7 @@ class ReportController extends Controller
                 $e->department?->name,
                 $e->employmentType?->name,
                 $e->{$column}?->toDateString(),
-                $e->{$column} ? today()->diffInDays($e->{$column}, false) : null,
+                $e->{$column} ? (int) round(today()->diffInDays($e->{$column}, false)) : null,
             ],
         );
     }
