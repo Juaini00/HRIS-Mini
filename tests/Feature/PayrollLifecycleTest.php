@@ -57,6 +57,44 @@ test('published payroll cannot be regenerated or adjusted', function () {
     $this->actingAs($admin)->post(route('payroll.adjustments.store', $period->records->first()), ['name' => 'Bonus', 'type' => 'earning', 'amount' => 100, 'notes' => 'Manual bonus'])->assertForbidden();
 });
 
+test('override value on an assigned component is applied after recompute', function () {
+    $employee = payrollEmployee();
+    $admin = User::factory()->create(['role' => UserRole::HrAdmin]);
+    $period = app(GeneratePayrollPeriod::class)->handle(['name' => 'August 2026', 'starts_on' => '2026-08-01', 'ends_on' => '2026-08-31']);
+    $baseline = (float) $period->records->firstWhere('employee_id', $employee->id)->net_salary;
+
+    $this->actingAs($admin)
+        ->post(route('salary-components.store'), ['name' => 'Bonus', 'code' => 'BONUS', 'type' => 'earning', 'calculation_type' => 'fixed', 'value' => 0, 'is_taxable' => '1'])
+        ->assertRedirect();
+    $bonus = SalaryComponent::where('code', 'BONUS')->firstOrFail();
+    expect($bonus->is_taxable)->toBeTrue();
+
+    // Assigning auto-recomputes the overlapping draft period, so the net salary reflects the bonus immediately.
+    $this->actingAs($admin)
+        ->post(route('salary-components.assign', $bonus), ['employee_id' => $employee->id, 'override_value' => 2_000_000, 'effective_from' => '2026-08-01'])
+        ->assertRedirect();
+    expect((float) $period->records()->where('employee_id', $employee->id)->value('net_salary'))->toBe($baseline + 2_000_000);
+
+    // Re-assigning replaces the single row (last write wins) instead of stacking overlapping rows.
+    $this->actingAs($admin)
+        ->post(route('salary-components.assign', $bonus), ['employee_id' => $employee->id, 'override_value' => 3_000_000, 'effective_from' => '2026-08-07'])
+        ->assertRedirect();
+    expect($employee->salaryComponents()->count())->toBe(1);
+    expect((float) $period->records()->where('employee_id', $employee->id)->value('net_salary'))->toBe($baseline + 3_000_000);
+});
+
+test('flash success from a payroll action is shared to inertia', function () {
+    $admin = User::factory()->create(['role' => UserRole::HrAdmin]);
+
+    $this->actingAs($admin)
+        ->post(route('salary-components.store'), ['name' => 'Bonus', 'type' => 'earning', 'calculation_type' => 'fixed', 'value' => 0])
+        ->assertRedirect()
+        ->assertSessionHas('success', 'Komponen gaji ditambahkan.');
+
+    $this->actingAs($admin)->get(route('payroll.index'))
+        ->assertInertia(fn ($page) => $page->where('flash.success', 'Komponen gaji ditambahkan.'));
+});
+
 test('employee cannot view draft or another employees payslip', function () {
     $employee = payrollEmployee();
     $other = payrollEmployee();

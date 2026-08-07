@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { Check, MessageSquareWarning, PenLine, X } from 'lucide-react';
 import { useState } from 'react';
+import { InfoHint } from '@/components/info-hint';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,7 @@ type Correction = {
 type Props = {
     attendances: { data: AttendanceRow[] };
     today?: AttendanceRow;
+    checkInBlockedReason?: string | null;
     canCorrect: boolean;
     corrections: Correction[];
 };
@@ -63,9 +65,15 @@ function toLocalInput(value?: string) {
 export default function Attendance({
     attendances,
     today,
+    checkInBlockedReason,
     canCorrect,
     corrections,
 }: Props) {
+    const alreadyCheckedIn = Boolean(today?.checked_in_at);
+    const checkInDisabled = alreadyCheckedIn || Boolean(checkInBlockedReason);
+    const checkInHint = alreadyCheckedIn
+        ? 'Anda sudah check-in hari ini.'
+        : checkInBlockedReason;
     const [correcting, setCorrecting] = useState<AttendanceRow | null>(null);
     const [requesting, setRequesting] = useState<AttendanceRow | null>(null);
     const [reviewing, setReviewing] = useState<Correction | null>(null);
@@ -157,7 +165,10 @@ export default function Attendance({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">Hari ini</CardTitle>
+                        <CardTitle className="flex items-center gap-1.5 text-base">
+                            Hari ini
+                            <InfoHint text="Check-in hanya tersedia satu kali pada hari kerja (Senin–Jumat), di luar hari libur, dan saat Anda tidak sedang cuti. Keterlambatan dihitung otomatis dari jam masuk kantor." />
+                        </CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-wrap items-center gap-4">
                         <div>
@@ -184,35 +195,42 @@ export default function Attendance({
                                 {today?.checked_out_at?.slice(11, 16) ?? '—'}
                             </p>
                         </div>
-                        <div className="ml-auto flex gap-2">
-                            <Button
-                                disabled={Boolean(today?.checked_in_at)}
-                                onClick={() =>
-                                    router.post(
-                                        '/attendance/check-in',
-                                        {},
-                                        { preserveScroll: true },
-                                    )
-                                }
-                            >
-                                Check in
-                            </Button>
-                            <Button
-                                disabled={
-                                    !today?.checked_in_at ||
-                                    Boolean(today?.checked_out_at)
-                                }
-                                onClick={() =>
-                                    router.post(
-                                        '/attendance/check-out',
-                                        {},
-                                        { preserveScroll: true },
-                                    )
-                                }
-                                variant="outline"
-                            >
-                                Check out
-                            </Button>
+                        <div className="ml-auto flex flex-col items-end gap-1.5">
+                            <div className="flex gap-2">
+                                <Button
+                                    disabled={checkInDisabled}
+                                    onClick={() =>
+                                        router.post(
+                                            '/attendance/check-in',
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                >
+                                    Check in
+                                </Button>
+                                <Button
+                                    disabled={
+                                        !today?.checked_in_at ||
+                                        Boolean(today?.checked_out_at)
+                                    }
+                                    onClick={() =>
+                                        router.post(
+                                            '/attendance/check-out',
+                                            {},
+                                            { preserveScroll: true },
+                                        )
+                                    }
+                                    variant="outline"
+                                >
+                                    Check out
+                                </Button>
+                            </div>
+                            {checkInDisabled && checkInHint ? (
+                                <p className="text-xs text-muted-foreground">
+                                    {checkInHint}
+                                </p>
+                            ) : null}
                         </div>
                     </CardContent>
                 </Card>

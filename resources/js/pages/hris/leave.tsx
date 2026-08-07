@@ -1,4 +1,6 @@
 import { Form, Head, router } from '@inertiajs/react';
+import { Ban, Check, X } from 'lucide-react';
+import { InfoHint } from '@/components/info-hint';
 import { LeaveCalendar } from '@/components/leave-calendar';
 import type {
     CalendarEntry,
@@ -7,6 +9,12 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 type LeaveRequest = {
     id: number;
     start_date: string;
@@ -97,64 +105,119 @@ export default function Leave({
                             action="/leave"
                             method="post"
                             encType="multipart/form-data"
-                            className="grid gap-3 md:grid-cols-4"
+                            className="grid gap-4"
                         >
                             {({ processing, errors }) => (
                                 <>
-                                    <select
-                                        name="leave_type_id"
-                                        className="h-9 rounded-md border bg-background px-3"
-                                        required
-                                    >
-                                        <option value="">Jenis cuti</option>
-                                        {types.map((x) => (
-                                            <option key={x.id} value={x.id}>
-                                                {x.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <Input
-                                        name="start_date"
-                                        type="date"
-                                        required
-                                    />
-                                    <Input
-                                        name="end_date"
-                                        type="date"
-                                        required
-                                    />
-                                    <select
-                                        name="duration_type"
-                                        className="h-9 rounded-md border bg-background px-3"
-                                    >
-                                        <option value="full_day">
-                                            Sehari penuh
-                                        </option>
-                                        <option value="first_half">
-                                            Setengah hari pagi
-                                        </option>
-                                        <option value="second_half">
-                                            Setengah hari siang
-                                        </option>
-                                    </select>
-                                    <Input
-                                        name="reason"
-                                        placeholder="Alasan"
-                                        required
-                                    />
-                                    <Input
-                                        name="attachment"
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                    />
-                                    <Button disabled={processing}>
-                                        Kirim pengajuan
-                                    </Button>
-                                    {Object.keys(errors).length > 0 && (
-                                        <p className="text-sm text-destructive">
-                                            {Object.values(errors)[0]}
-                                        </p>
-                                    )}
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="leave_type_id">
+                                                Jenis cuti
+                                            </Label>
+                                            <select
+                                                id="leave_type_id"
+                                                name="leave_type_id"
+                                                className="h-9 rounded-md border bg-background px-3 text-sm"
+                                                required
+                                            >
+                                                <option value="">
+                                                    Pilih jenis cuti…
+                                                </option>
+                                                {types.map((x) => (
+                                                    <option
+                                                        key={x.id}
+                                                        value={x.id}
+                                                    >
+                                                        {x.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="start_date">
+                                                Tanggal mulai
+                                            </Label>
+                                            <Input
+                                                id="start_date"
+                                                name="start_date"
+                                                type="date"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="end_date">
+                                                Tanggal selesai
+                                            </Label>
+                                            <Input
+                                                id="end_date"
+                                                name="end_date"
+                                                type="date"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label
+                                                htmlFor="duration_type"
+                                                className="flex items-center gap-1.5"
+                                            >
+                                                Durasi
+                                                <InfoHint text="Pilih setengah hari hanya jika tanggal mulai dan selesai sama. Untuk rentang beberapa hari, gunakan sehari penuh." />
+                                            </Label>
+                                            <select
+                                                id="duration_type"
+                                                name="duration_type"
+                                                className="h-9 rounded-md border bg-background px-3 text-sm"
+                                            >
+                                                <option value="full_day">
+                                                    Sehari penuh
+                                                </option>
+                                                <option value="first_half">
+                                                    Setengah hari (pagi)
+                                                </option>
+                                                <option value="second_half">
+                                                    Setengah hari (siang)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="reason">
+                                                Alasan
+                                            </Label>
+                                            <Input
+                                                id="reason"
+                                                name="reason"
+                                                placeholder="Contoh: acara keluarga"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label
+                                                htmlFor="attachment"
+                                                className="flex items-center gap-1.5"
+                                            >
+                                                Lampiran
+                                                <InfoHint text="Opsional. Lampirkan surat dokter atau dokumen pendukung (PDF/JPG/PNG)." />
+                                            </Label>
+                                            <Input
+                                                id="attachment"
+                                                name="attachment"
+                                                type="file"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Button disabled={processing}>
+                                            Kirim pengajuan
+                                        </Button>
+                                        {Object.keys(errors).length > 0 && (
+                                            <p className="text-sm text-destructive">
+                                                {Object.values(errors)[0]}
+                                            </p>
+                                        )}
+                                    </div>
                                 </>
                             )}
                         </Form>
@@ -169,7 +232,7 @@ export default function Leave({
                                     <th>Jenis</th>
                                     <th>Tanggal</th>
                                     <th>Status</th>
-                                    <th>Aksi</th>
+                                    <th className="p-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -185,62 +248,103 @@ export default function Leave({
                                         <td className="capitalize">
                                             {r.status}
                                         </td>
-                                        <td>
-                                            {canReview &&
-                                                r.status === 'pending' && (
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                router.patch(
-                                                                    `/leave/${r.id}/review`,
-                                                                    {
-                                                                        status: 'approved',
-                                                                    },
-                                                                )
-                                                            }
-                                                        >
-                                                            Setujui
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() =>
-                                                                router.patch(
-                                                                    `/leave/${r.id}/review`,
-                                                                    {
-                                                                        status: 'rejected',
-                                                                    },
-                                                                )
-                                                            }
-                                                        >
-                                                            Tolak
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            {['pending', 'approved'].includes(
-                                                r.status,
-                                            ) && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        const reason =
-                                                            window.prompt(
-                                                                'Alasan pembatalan',
-                                                            );
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-end gap-1">
+                                                {canReview &&
+                                                    r.status === 'pending' && (
+                                                        <>
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        size="icon"
+                                                                        className="size-8"
+                                                                        aria-label="Setujui"
+                                                                        onClick={() =>
+                                                                            router.patch(
+                                                                                `/leave/${r.id}/review`,
+                                                                                {
+                                                                                    status: 'approved',
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Check className="size-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Setujui
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="destructive"
+                                                                        className="size-8"
+                                                                        aria-label="Tolak"
+                                                                        onClick={() =>
+                                                                            router.patch(
+                                                                                `/leave/${r.id}/review`,
+                                                                                {
+                                                                                    status: 'rejected',
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <X className="size-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Tolak
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                {['pending', 'approved'].includes(
+                                                    r.status,
+                                                ) && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="outline"
+                                                                className="size-8"
+                                                                aria-label="Batalkan"
+                                                                onClick={() => {
+                                                                    const reason =
+                                                                        window.prompt(
+                                                                            'Alasan pembatalan',
+                                                                        );
 
-                                                        if (reason) {
-                                                            router.patch(
-                                                                `/leave/${r.id}/cancel`,
-                                                                { reason },
-                                                            );
-                                                        }
-                                                    }}
-                                                >
-                                                    Batalkan
-                                                </Button>
-                                            )}
+                                                                    if (reason) {
+                                                                        router.patch(
+                                                                            `/leave/${r.id}/cancel`,
+                                                                            {
+                                                                                reason,
+                                                                            },
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Ban className="size-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            Batalkan
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                                {r.status !== 'pending' &&
+                                                    r.status !== 'approved' && (
+                                                        <span className="text-muted-foreground">
+                                                            —
+                                                        </span>
+                                                    )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

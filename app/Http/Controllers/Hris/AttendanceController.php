@@ -22,7 +22,7 @@ use Inertia\Response;
 
 class AttendanceController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, RecordAttendance $record): Response
     {
         $employee = $request->user()->employee;
         $employeeId = $employee?->id;
@@ -38,6 +38,7 @@ class AttendanceController extends Controller
         return Inertia::render('hris/attendance', [
             'attendances' => $query->with('corrections')->paginate(25)->withQueryString(),
             'today' => $employee?->attendances()->where('date', today()->toDateString())->first(),
+            'checkInBlockedReason' => $employee ? $record->checkInBlockedReason($employee) : null,
             'canCorrect' => $canCorrect,
             'corrections' => $this->corrections($request, $employeeId, $canCorrect),
         ]);

@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class StoreEmployeeRequest extends FormRequest
 {
@@ -22,6 +23,7 @@ class StoreEmployeeRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
             'employee_number' => ['nullable', 'string', 'max:30', 'unique:employees,employee_number'],
             'department_id' => ['required', Rule::exists('departments', 'id')->where('is_active', true)],
             'position_id' => ['required', Rule::exists('positions', 'id')->where('is_active', true)],

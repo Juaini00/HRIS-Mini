@@ -8,7 +8,8 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
         >
-            <path d="M6 27V5h5l10 14V5h5v22h-5L11 13v14H6Z" />
+            <circle cx="16" cy="11" r="5.5" />
+            <path d="M6 27c0-5.523 4.477-10 10-10s10 4.477 10 10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1Z" />
         </svg>
     );
 }

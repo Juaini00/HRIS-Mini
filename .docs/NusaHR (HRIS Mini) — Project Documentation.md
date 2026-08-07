@@ -20,30 +20,34 @@ Tujuan utama proyek ini adalah membangun **HRIS** modern yang aman, mudah diguna
 
 Backend:
 
-* Laravel 13 dan PHP 8.3+  
-* PostgreSQL atau Neon PostgreSQL
+* Laravel 13 dan PHP 8.5 (minimal PHP 8.3)  
+* PostgreSQL 17 (SQLite in-memory untuk pengujian)  
+* Laravel Fortify untuk autentikasi  
+* spatie/laravel-permission 8 untuk role dan permission
 
 Frontend:
 
 * React 19  
 * TypeScript  
-* Inertia 3  
+* Inertia.js 3  
 * Tailwind CSS 4  
-* Shadcn/Radix
+* shadcn/ui dan Radix  
+* Lucide (ikon) dan Recharts (grafik)  
+* Laravel Wayfinder untuk fungsi rute bertipe
 
 Tools:
 
-* Vite  
-* Docker Compose  
-* Pest  
-* Larastan  
+* Vite 8  
+* Docker Compose dan Mailpit  
+* Pest 5  
+* Larastan (PHPStan level 7)  
 * Pint, ESLint  
 * Prettier  
 * TypeScript checks
 
 # 5\. Arsitektur Aplikasi
 
-# NusaHR menggunakan satu aplikasi Laravel. React dan TypeScript dirender melalui Inertia, bukan sebagai aplikasi API terpisah. Named routes mengarahkan request ke controller, Form Request menangani validasi dan otorisasi, policy melindungi resource, action khusus menjalankan workflow transaksional, dan Eloquent menangani persistence.
+NusaHR menggunakan satu aplikasi Laravel. React dan TypeScript dirender melalui Inertia, bukan sebagai aplikasi API terpisah. Named routes mengarahkan request ke controller, Form Request menangani validasi dan otorisasi, policy melindungi resource, action khusus menjalankan workflow transaksional, dan Eloquent menangani persistence. Tidak ada repository layer yang membungkus Eloquent.
 
 Workflow yang memerlukan konsistensi, misalnya saldo cuti, kehadiran, dan publikasi payroll dilindungi oleh transaction dan row locking. Notifikasi database diproses melalui queue, sedangkan scheduler menjalankan proses absensi, publikasi pengumuman terjadwal, dan pengecekan dokumen yang akan kedaluwarsa.
 
@@ -54,11 +58,13 @@ Manajemen karyawan dan organisasi: profil karyawan, nomor karyawan otomatis, dep
 * **Cuti:** perhitungan hari kerja, cuti penuh atau setengah hari, validasi saldo dan overlap, lampiran, reservasi saldo saat pending, approval/rejection/cancellation, notifikasi, serta audit trail.  
 * **Kehadiran:** check-in/check-out, toleransi jadwal, perhitungan keterlambatan dan durasi kerja, koreksi oleh HR, visibilitas tim langsung, dan proses absensi yang memperhatikan weekend, hari libur, serta cuti yang disetujui.  
 * **Payroll sederhana:** komponen gaji efektif per tanggal, perhitungan fixed atau percentage, deduction untuk absensi/cuti tidak dibayar, adjustment manual, draft deterministik, publikasi transaksional, ekspor CSV, serta payslip privat yang dapat dicetak.  
-* **Komunikasi dan insight:** pengumuman draft/terjadwal dengan audience berbasis peran/departemen/lokasi, pelacakan pembacaan, notification center, metrik dashboard, laporan CSV, pengaturan, dan audit viewer dengan data sensitif yang dimasking.
+* **Komunikasi dan insight:** pengumuman draft/terjadwal dengan audience berbasis peran/departemen/lokasi, pelacakan pembacaan, notification center, metrik dashboard, 15 laporan CSV yang mengikuti izin dan filter tampilan layar, pengaturan, dan audit viewer dengan data sensitif yang dimasking.
+
+Detail pengalaman pengguna: setiap kolom isian formulir dilengkapi label dan bantuan kontekstual (tooltip saat hover) agar tujuannya jelas. Setiap input nominal gaji/uang diformat sebagai Rupiah (mis. `Rp 10.000.000`) sambil mengirim nilai numerik mentah, sehingga tidak ada ambiguitas antara 10 ribu dan 10 juta. Tombol check-in menonaktifkan diri disertai alasan yang jelas pada hari non-kerja, libur, saat cuti disetujui, atau bila sudah check-in.
 
 # 7\. Peran dan Hak Akses
 
-Sistem mendukung empat peran: Super Admin, HR Admin, Manager, dan Employee. 
+Sistem mendukung empat peran: Super Admin, HR Admin, Manager, dan Employee, yang dibangun di atas 42 permission granular melalui spatie/laravel-permission. 
 
 * **Super Admin** mengelola role, akun Super Admin, pengaturan perusahaan, dan audit log.   
 * **HR Admin** mengelola master data, lifecycle karyawan, cuti, kehadiran, payroll, pengumuman, serta laporan; namun tidak dapat memodifikasi atau menonaktifkan akun Super Admin.  
@@ -78,7 +84,7 @@ Dokumen karyawan dan lampiran cuti disimpan di private disk dengan path acak, va
 
 # 10\. Kualitas, Pengujian, dan Operasional
 
-Pengujian menggunakan Pest dengan SQLite terisolasi, sementara CI memvalidasi migrasi dan seeding menggunakan PostgreSQL. Cakupan pengujian mencakup autentikasi, authorization berbasis peran, lifecycle karyawan, dokumen privat, alur cuti, kehadiran, payroll, pengumuman, laporan, pengaturan, notifikasi, dan masking audit.  
+Pengujian menggunakan Pest dengan SQLite in-memory terisolasi (lebih dari 180 test), sementara CI memvalidasi migrasi dan seeding menggunakan PostgreSQL. Cakupan pengujian mencakup autentikasi, authorization berbasis peran, lifecycle karyawan, dokumen privat, alur cuti, kehadiran (termasuk aturan check-in), payroll, pengumuman, laporan, pengaturan, notifikasi, dan masking audit.  
 Proses quality gate mencakup test suite, Pint, pemeriksaan TypeScript, ESLint, Prettier, build Vite, serta audit dependency Composer dan npm. Untuk deployment diperlukan queue worker yang disupervisi, scheduler cron setiap menit, HTTPS, backup terenkripsi, monitoring failed jobs, serta penggunaan secret manager untuk APP\_KEY dan DATABASE\_URL.
 
 # 11\. Batasan Saat Ini dan Pengembangan Lanjutan

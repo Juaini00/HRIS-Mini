@@ -1,13 +1,29 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
+import { useRef } from 'react';
+import { CurrencyInput } from '@/components/currency-input';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 type Item = {
     id: number;
     employee_number: string;
+    ended_at: string | null;
+    employment_status?: string;
     user: { name: string; email: string };
     department: { name: string };
     position: { name: string };
+};
+const STATUS_META: Record<
+    string,
+    { label: string; variant: 'secondary' | 'destructive' | 'outline' }
+> = {
+    active: { label: 'Aktif', variant: 'secondary' },
+    probation: { label: 'Probation', variant: 'outline' },
+    on_leave: { label: 'Cuti panjang', variant: 'outline' },
+    suspended: { label: 'Diskors', variant: 'destructive' },
+    resigned: { label: 'Resign', variant: 'destructive' },
+    terminated: { label: 'Diberhentikan', variant: 'destructive' },
 };
 type Props = {
     employees: { data: Item[] };
@@ -16,6 +32,7 @@ type Props = {
     locations: Array<{ id: number; name: string }>;
     employmentTypes: Array<{ id: number; name: string }>;
     canCreate: boolean;
+    filters: { search: string | null; status: string };
 };
 export default function Employees({
     employees,
@@ -24,7 +41,26 @@ export default function Employees({
     locations,
     employmentTypes,
     canCreate,
+    filters,
 }: Props) {
+    const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const applyFilters = (next: Partial<Props['filters']>) => {
+        router.get(
+            '/employees',
+            { search: filters.search, status: filters.status, ...next },
+            { preserveState: true, replace: true },
+        );
+    };
+    const onSearchChange = (value: string) => {
+        if (searchDebounce.current) {
+            clearTimeout(searchDebounce.current);
+        }
+
+        searchDebounce.current = setTimeout(
+            () => applyFilters({ search: value || null }),
+            300,
+        );
+    };
     return (
         <>
             <Head title="Karyawan" />
@@ -120,10 +156,8 @@ export default function Employees({
                                             type="date"
                                             required
                                         />
-                                        <Input
+                                        <CurrencyInput
                                             name="basic_salary"
-                                            type="number"
-                                            min="0"
                                             placeholder="Gaji pokok"
                                             required
                                         />
@@ -141,6 +175,18 @@ export default function Employees({
                                                 HR Admin
                                             </option>
                                         </select>
+                                        <Input
+                                            name="password"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            placeholder="Password (opsional)"
+                                        />
+                                        <Input
+                                            name="password_confirmation"
+                                            type="password"
+                                            autoComplete="new-password"
+                                            placeholder="Ulangi password"
+                                        />
                                         <Button disabled={processing}>
                                             Simpan
                                         </Button>
@@ -156,6 +202,29 @@ export default function Employees({
                     </Card>
                 )}
                 <Card>
+                    <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center">
+                        <Input
+                            defaultValue={filters.search ?? ''}
+                            placeholder="Cari nama, email, atau nomor karyawan..."
+                            className="md:max-w-xs"
+                            onChange={(e) => onSearchChange(e.target.value)}
+                        />
+                        <select
+                            value={filters.status}
+                            className="h-9 rounded-md border bg-background px-3"
+                            onChange={(e) =>
+                                applyFilters({ status: e.target.value })
+                            }
+                        >
+                            <option value="all">Semua status</option>
+                            <option value="active">Aktif</option>
+                            <option value="probation">Probation</option>
+                            <option value="on_leave">Cuti panjang</option>
+                            <option value="suspended">Diskors</option>
+                            <option value="resigned">Resign</option>
+                            <option value="terminated">Diberhentikan</option>
+                        </select>
+                    </CardHeader>
                     <CardContent className="overflow-x-auto p-0">
                         <table className="w-full text-sm">
                             <thead>
@@ -164,6 +233,7 @@ export default function Employees({
                                     <th>Nama</th>
                                     <th>Departemen</th>
                                     <th>Posisi</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -186,8 +256,34 @@ export default function Employees({
                                         </td>
                                         <td>{e.department.name}</td>
                                         <td>{e.position.name}</td>
+                                        <td>
+                                            {(() => {
+                                                const meta =
+                                                    STATUS_META[
+                                                        e.employment_status ??
+                                                            'active'
+                                                    ] ?? STATUS_META.active;
+                                                return (
+                                                    <Badge
+                                                        variant={meta.variant}
+                                                    >
+                                                        {meta.label}
+                                                    </Badge>
+                                                );
+                                            })()}
+                                        </td>
                                     </tr>
                                 ))}
+                                {employees.data.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="p-4 text-center text-muted-foreground"
+                                        >
+                                            Tidak ada karyawan yang cocok.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </CardContent>

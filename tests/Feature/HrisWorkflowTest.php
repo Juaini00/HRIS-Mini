@@ -62,6 +62,38 @@ test('attendance cannot be checked in twice', function () {
     $action->checkIn($employee);
 })->throws(ValidationException::class);
 
+test('check-in is allowed on a working day', function () {
+    Date::setTestNow('2026-08-03 08:05:00'); // Monday
+    $employee = hrisEmployee();
+
+    expect(app(RecordAttendance::class)->checkInBlockedReason($employee))->toBeNull();
+});
+
+test('check-in is blocked on weekends', function () {
+    Date::setTestNow('2026-08-01 08:05:00'); // Saturday
+    $employee = hrisEmployee();
+
+    expect(app(RecordAttendance::class)->checkInBlockedReason($employee))
+        ->toContain('hari kerja');
+});
+
+test('check-in is blocked while on approved leave', function () {
+    Date::setTestNow('2026-08-03 08:05:00'); // Monday
+    $employee = hrisEmployee();
+    $type = LeaveType::create(['name' => 'Annual', 'annual_quota' => 12]);
+    $employee->leaveRequests()->create([
+        'leave_type_id' => $type->id,
+        'start_date' => '2026-08-03',
+        'end_date' => '2026-08-05',
+        'days' => 3,
+        'status' => LeaveRequestStatus::Approved,
+        'reason' => 'Family',
+    ]);
+
+    expect(app(RecordAttendance::class)->checkInBlockedReason($employee))
+        ->toContain('cuti');
+});
+
 test('payroll generation snapshots every active employee exactly once', function () {
     hrisEmployee();
     hrisEmployee();

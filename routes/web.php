@@ -20,6 +20,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('employees', EmployeeController::class)->only(['index', 'show', 'store', 'update']);
+    Route::put('employees/{employee}/profile', [EmployeeController::class, 'updateProfile'])->name('employees.profile.update');
     Route::patch('employees/{employee}/deactivate', [EmployeeController::class, 'deactivate'])->name('employees.deactivate');
     Route::post('employees/{employee}/photo', [EmployeeController::class, 'updatePhoto'])->name('employees.photo.update');
     Route::get('leave', [LeaveController::class, 'index'])->name('leave.index');
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('attendance/{attendance}/correction-requests', [AttendanceController::class, 'requestCorrection'])->name('attendance.corrections.store');
     Route::patch('attendance-corrections/{attendanceCorrection}', [AttendanceController::class, 'reviewCorrection'])->name('attendance.corrections.review');
     Route::resource('payroll', PayrollController::class)->only(['index', 'store'])->parameters(['payroll' => 'payrollPeriod']);
+    Route::post('payroll/{payrollPeriod}/recompute', [PayrollController::class, 'recompute'])->name('payroll.recompute');
     Route::post('payroll/{payrollPeriod}/publish', [PayrollController::class, 'publish'])->name('payroll.publish');
     Route::post('payroll-records/{payrollRecord}/adjustments', [PayrollController::class, 'adjustment'])->name('payroll.adjustments.store');
     Route::post('salary-components', [PayrollController::class, 'component'])->name('salary-components.store');

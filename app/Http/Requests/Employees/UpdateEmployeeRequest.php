@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Employees;
 
+use App\Enums\EmploymentStatus;
 use App\Enums\UserRole;
 use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
@@ -43,6 +44,7 @@ class UpdateEmployeeRequest extends FormRequest
             'employment_type_id' => ['nullable', Rule::exists('employment_types', 'id')->where('is_active', true)],
             'manager_id' => ['nullable', 'exists:employees,id', Rule::notIn([$employee->id])],
             'joined_at' => ['required', 'date'],
+            'employment_status' => ['nullable', Rule::enum(EmploymentStatus::class)],
             'basic_salary' => ['required', 'numeric', 'min:0', 'max:9999999999999.99'],
             'role' => ['required', Rule::in($this->user()->role === UserRole::SuperAdmin ? array_column(UserRole::cases(), 'value') : [UserRole::HrAdmin->value, UserRole::Manager->value, UserRole::Employee->value])],
             'phone' => ['nullable', 'string', 'max:30'],

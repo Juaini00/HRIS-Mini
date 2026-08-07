@@ -30,6 +30,39 @@ const FILTER_LABELS: Record<string, string> = {
     period_id: 'Periode payroll',
 };
 
+/** One-line purpose for each report, keyed by report key. */
+const REPORT_DESCRIPTIONS: Record<string, string> = {
+    'employee-directory':
+        'Daftar lengkap karyawan beserta data jabatan dan status kepegawaian.',
+    'headcount-by-department':
+        'Jumlah karyawan aktif per departemen untuk melihat sebaran tenaga kerja.',
+    'contract-expiration':
+        'Karyawan yang kontraknya akan berakhir dalam rentang hari yang dipilih.',
+    'probation-expiration':
+        'Karyawan yang masa percobaannya akan berakhir dalam rentang hari yang dipilih.',
+    'daily-attendance':
+        'Rekap kehadiran seluruh karyawan pada satu tanggal tertentu.',
+    'monthly-attendance':
+        'Ringkasan kehadiran per karyawan sepanjang rentang tanggal.',
+    'late-attendance':
+        'Daftar keterlambatan beserta jumlah menit terlambat pada rentang tanggal.',
+    absence: 'Karyawan yang tidak hadir tanpa keterangan pada rentang tanggal.',
+    'leave-requests':
+        'Seluruh pengajuan cuti beserta statusnya pada rentang tanggal.',
+    'leave-usage':
+        'Total pemakaian cuti dikelompokkan per jenis cuti dalam satu tahun.',
+    'leave-balances':
+        'Sisa saldo cuti setiap karyawan untuk tahun yang dipilih.',
+    'payroll-summary':
+        'Ringkasan total penggajian untuk satu periode payroll.',
+    'payroll-details':
+        'Rincian gaji per karyawan (pendapatan, potongan, gaji bersih) untuk satu periode.',
+    'announcement-readership':
+        'Tingkat keterbacaan tiap pengumuman: siapa yang sudah dan belum membaca.',
+    'audit-activity':
+        'Jejak aktivitas sistem pada rentang tanggal untuk keperluan audit.',
+};
+
 const today = new Date().toISOString().slice(0, 10);
 const monthStart = `${today.slice(0, 7)}-01`;
 const currentYear = new Date().getFullYear();
@@ -128,14 +161,22 @@ export default function Reports({ reports, scope, payrollPeriods }: Props) {
                                     className="flex flex-col"
                                     key={report.key}
                                 >
-                                    <CardHeader className="flex-row items-start justify-between gap-2 space-y-0">
-                                        <CardTitle className="text-base">
-                                            {report.label}
-                                        </CardTitle>
-                                        {scope === 'company' && report.team ? (
-                                            <Badge variant="secondary">
-                                                Tim
-                                            </Badge>
+                                    <CardHeader className="space-y-1.5">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <CardTitle className="text-base">
+                                                {report.label}
+                                            </CardTitle>
+                                            {scope === 'company' &&
+                                            report.team ? (
+                                                <Badge variant="secondary">
+                                                    Tim
+                                                </Badge>
+                                            ) : null}
+                                        </div>
+                                        {REPORT_DESCRIPTIONS[report.key] ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                {REPORT_DESCRIPTIONS[report.key]}
+                                            </p>
                                         ) : null}
                                     </CardHeader>
                                     <CardContent className="mt-auto">
