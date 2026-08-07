@@ -1,4 +1,44 @@
 services:
+  app:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      APP_TIMEZONE: Asia/Makassar
+      APP_KEY: ${APP_KEY:-}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: nusahr
+      DB_USERNAME: nusahr
+      DB_PASSWORD: nusahr
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: public
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      postgres: { condition: service_healthy }
+      mailpit: { condition: service_started }
+  queue:
+    build: .
+    command: php artisan queue:work --tries=3
+    restart: unless-stopped
+    environment:
+      APP_ENV: local
+      APP_KEY: ${APP_KEY:-}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_DATABASE: nusahr
+      DB_USERNAME: nusahr
+      DB_PASSWORD: nusahr
+      QUEUE_CONNECTION: database
+    depends_on:
+      postgres: { condition: service_healthy }
   postgres:
     image: postgres:17-alpine
     environment:

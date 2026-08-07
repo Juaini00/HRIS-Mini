@@ -1,11 +1,63 @@
 <?php
+
 namespace App\Actions\Leave;
+
 use App\Enums\LeaveStatus;
 use App\Models\Employee;
 use App\Models\LeaveBalance;
 use App\Models\LeaveRequest;
+use App\Models\LeaveType;
+use App\Models\User;
+use App\Notifications\LeaveSubmittedNotification;
 use App\Services\WorkingDayCalculator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-class SubmitLeaveRequest { public function __construct(private WorkingDayCalculator $calculator) {} public function handle(Employee $employee, array $data): LeaveRequest { return DB::transaction(function () use ($employee,$data) { $start=Carbon::parse($data['start_date']); $end=Carbon::parse($data['end_date']); $days=$this->calculator->between($start,$end); if ($days<=0) { throw ValidationException::withMessages(['start_date'=>'Rentang cuti tidak memiliki hari kerja.']); } if (LeaveRequest::where('employee_id',$employee->id)->whereNotIn('status',[LeaveStatus::Rejected,LeaveStatus::Cancelled])->where('start_date','<=',$end)->where('end_date','>=',$start)->exists()) { throw ValidationException::withMessages(['start_date'=>'Rentang cuti bertumpang tindih.']); } $balance=LeaveBalance::where('employee_id',$employee->id)->where('leave_type_id',$data['leave_type_id'])->where('year',$start->year)->lockForUpdate()->firstOrFail(); if ((float)$balance->entitled-(float)$balance->used-(float)$balance->pending<$days) { throw ValidationException::withMessages(['leave_type_id'=>'Saldo cuti tidak mencukupi.']); } $balance->increment('pending',$days); return LeaveRequest::create([...$data,'employee_id'=>$employee->id,'days'=>$days]); }); } }
+use Throwable;
+
+class SubmitLeaveRequest
+{
+    public function __construct(private WorkingDayCalculator $calculator) {}
+
+    public function handle(Employee $employee, array $data, ?UploadedFile $attachment = null): LeaveRequest
+    {
+        $path = $attachment?->store("leave-attachments/{$employee->id}", 'local');
+        try {
+            $request = DB::transaction(function () use ($employee, $data, $path): LeaveRequest {
+                $start = Carbon::parse($data['start_date']);
+                $end = Carbon::parse($data['end_date']);
+                $data['duration_type'] ??= 'full_day';
+                $workingDays = $this->calculator->between($start, $end);
+                $days = $data['duration_type'] === 'full_day' ? $workingDays : ($workingDays === 1.0 ? 0.5 : 0.0);
+                if ($days <= 0) {
+                    throw ValidationException::withMessages(['start_date' => 'Rentang cuti tidak memiliki hari kerja.']);
+                }
+                if (LeaveRequest::query()->where('employee_id', $employee->id)->whereNotIn('status', [LeaveStatus::Rejected, LeaveStatus::Cancelled])->where('start_date', '<=', $end)->where('end_date', '>=', $start)->exists()) {
+                    throw ValidationException::withMessages(['start_date' => 'Rentang cuti bertumpang tindih.']);
+                }
+                $leaveType = LeaveType::query()->findOrFail($data['leave_type_id']);
+                if ($leaveType->is_paid) {
+                    $balance = LeaveBalance::query()->where('employee_id', $employee->id)->where('leave_type_id', $data['leave_type_id'])->where('year', $start->year)->lockForUpdate()->firstOrFail();
+                    if ((float) $balance->entitled - (float) $balance->used - (float) $balance->pending < $days) {
+                        throw ValidationException::withMessages(['leave_type_id' => 'Saldo cuti tidak mencukupi.']);
+                    }
+                    $balance->increment('pending', $days);
+                }
+
+                return LeaveRequest::create([...$data, 'employee_id' => $employee->id, 'days' => $days, 'attachment_path' => $path]);
+            });
+        } catch (Throwable $exception) {
+            if ($path) { Storage::disk('local')->delete($path); }
+            throw $exception;
+        }
+
+        $recipients = User::query()->whereIn('role', ['super_admin', 'hr_admin'])->where('is_active', true)->get();
+        if ($employee->manager?->user) { $recipients->push($employee->manager->user); }
+        Notification::send($recipients->unique('id'), new LeaveSubmittedNotification($request->load('employee.user')));
+
+        return $request;
+    }
+}
