@@ -33,18 +33,24 @@ class AnnouncementController extends Controller
     {
         $announcement = Announcement::create([...$request->validated(), 'author_id' => $request->user()->id]);
         $audit->handle($request, 'announcement.created', $announcement);
+
         return back()->with('success', 'Pengumuman disimpan.');
     }
 
     public function update(UpsertAnnouncementRequest $request, Announcement $announcement, WriteAuditLog $audit): RedirectResponse
     {
-        $announcement->update($request->validated()); $audit->handle($request, 'announcement.updated', $announcement);
+        $announcement->update($request->validated());
+        $audit->handle($request, 'announcement.updated', $announcement);
+
         return back()->with('success', 'Pengumuman diperbarui.');
     }
 
     public function destroy(Request $request, Announcement $announcement, WriteAuditLog $audit): RedirectResponse
     {
-        abort_unless($request->user()->isAdministrator(), 403); $audit->handle($request, 'announcement.deleted', $announcement); $announcement->delete();
+        abort_unless($request->user()->isAdministrator(), 403);
+        $audit->handle($request, 'announcement.deleted', $announcement);
+        $announcement->delete();
+
         return back()->with('success', 'Pengumuman dihapus.');
     }
 
@@ -60,6 +66,7 @@ class AnnouncementController extends Controller
             403,
         );
         AnnouncementRead::firstOrCreate(['announcement_id' => $announcement->id, 'user_id' => $request->user()->id], ['read_at' => now()]);
+
         return back();
     }
 }
