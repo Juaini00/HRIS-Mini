@@ -4,6 +4,7 @@ import { dashboard, login } from '@/routes';
 
 export default function Welcome() {
     const { auth } = usePage().props;
+
     return (
         <>
             <Head title="Human Resource Information System" />

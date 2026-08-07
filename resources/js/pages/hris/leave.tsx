@@ -1,4 +1,9 @@
 import { Form, Head, router } from '@inertiajs/react';
+import { LeaveCalendar } from '@/components/leave-calendar';
+import type {
+    CalendarEntry,
+    CalendarHoliday,
+} from '@/components/leave-calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,7 +25,13 @@ type Props = {
         pending: string;
         leave_type?: { name: string };
     }>;
-    calendar: LeaveRequest[];
+    calendar: CalendarEntry[];
+    calendarScope: string;
+    calendarScopes: string[];
+    calendarMonth: string;
+    holidays: CalendarHoliday[];
+    departments: Array<{ id: number; name: string }>;
+    filters: { department_id?: string; leave_type_id?: string };
     canReview: boolean;
 };
 export default function Leave({
@@ -28,6 +39,12 @@ export default function Leave({
     types,
     balances,
     calendar,
+    calendarScope,
+    calendarScopes,
+    calendarMonth,
+    holidays,
+    departments,
+    filters,
     canReview,
 }: Props) {
     return (
@@ -60,36 +77,17 @@ export default function Leave({
                         </Card>
                     ))}
                 </div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Kalender cuti mendatang</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {calendar.length ? (
-                            calendar.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="rounded-lg border p-3"
-                                >
-                                    <p className="font-medium">
-                                        {item.employee?.user?.name ??
-                                            'Karyawan'}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {item.start_date} – {item.end_date}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {item.leave_type?.name}
-                                    </p>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-sm text-muted-foreground">
-                                Belum ada cuti disetujui.
-                            </p>
-                        )}
-                    </CardContent>
-                </Card>
+                <LeaveCalendar
+                    departments={departments}
+                    entries={calendar}
+                    filters={filters}
+                    holidays={holidays}
+                    leaveTypes={types}
+                    month={calendarMonth}
+                    scope={calendarScope}
+                    scopes={calendarScopes}
+                    showNames={calendarScope !== 'personal'}
+                />
                 <Card>
                     <CardHeader>
                         <CardTitle>Ajukan cuti</CardTitle>
@@ -231,11 +229,13 @@ export default function Leave({
                                                             window.prompt(
                                                                 'Alasan pembatalan',
                                                             );
-                                                        if (reason)
+
+                                                        if (reason) {
                                                             router.patch(
                                                                 `/leave/${r.id}/cancel`,
                                                                 { reason },
                                                             );
+                                                        }
                                                     }}
                                                 >
                                                     Batalkan
