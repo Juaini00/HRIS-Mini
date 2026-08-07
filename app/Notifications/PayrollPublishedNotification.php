@@ -10,7 +10,22 @@ use Illuminate\Notifications\Notification;
 class PayrollPublishedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
     public function __construct(public PayrollPeriod $period) {}
-    public function via(object $notifiable): array { return ['database']; }
-    public function toArray(object $notifiable): array { return ['title' => 'Payslip tersedia', 'message' => "Payslip {$this->period->name} telah dipublikasikan.", 'url' => '/payroll']; }
+
+    /**
+     * @return list<string>
+     */
+    public function via(object $notifiable): array
+    {
+        return ['database'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
+    {
+        return ['title' => 'Payslip tersedia', 'message' => "Payslip {$this->period->name} telah dipublikasikan.", 'url' => '/payroll'];
+    }
 }

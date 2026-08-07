@@ -10,6 +10,9 @@ class WriteAuditLog
 {
     private const SENSITIVE_KEYS = ['password', 'bank_account', 'basic_salary', 'amount', 'two_factor_secret', 'two_factor_recovery_codes', 'token', 'secret'];
 
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
     public function handle(Request $request, string $event, ?Model $subject = null, array $metadata = []): AuditLog
     {
         return AuditLog::create([
@@ -22,6 +25,12 @@ class WriteAuditLog
         ]);
     }
 
+    /**
+     * Redact secrets and confidential figures before they reach the audit trail.
+     *
+     * @param  array<string, mixed>  $metadata
+     * @return array<string, mixed>
+     */
     private function sanitize(array $metadata): array
     {
         foreach ($metadata as $key => $value) {

@@ -119,7 +119,7 @@ export default function Announcements({
                                 <CardTitle>{item.title}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="whitespace-pre-line text-sm">
+                                <p className="text-sm whitespace-pre-line">
                                     {item.body}
                                 </p>
                                 <div className="mt-4 flex items-center justify-between">

@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class StoreEmployeeDocument
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function handle(Employee $employee, User $uploader, UploadedFile $file, array $data): EmployeeDocument
     {
         $path = $file->store("employee-documents/{$employee->id}", 'local');

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Employees;
 
 use App\Enums\UserRole;
+use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,9 +11,12 @@ class StoreEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', \App\Models\Employee::class);
+        return $this->user()->can('create', Employee::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

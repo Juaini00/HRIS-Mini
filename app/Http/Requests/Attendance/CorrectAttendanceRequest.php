@@ -6,7 +6,14 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CorrectAttendanceRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user()->isAdministrator(); }
+    public function authorize(): bool
+    {
+        return $this->user()->isAdministrator();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

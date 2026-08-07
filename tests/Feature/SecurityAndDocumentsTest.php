@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Models\Position;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -47,7 +48,7 @@ test('unrelated employee cannot download another employee document', function ()
 
 test('audit metadata masks secrets recursively', function () {
     $admin = User::factory()->create(['role' => UserRole::SuperAdmin]);
-    $request = Illuminate\Http\Request::create('/audit-test', 'POST');
+    $request = Request::create('/audit-test', 'POST');
     $request->setUserResolver(fn () => $admin);
 
     $log = app(WriteAuditLog::class)->handle($request, 'security.test', metadata: ['password' => 'unsafe', 'nested' => ['token' => 'unsafe']]);

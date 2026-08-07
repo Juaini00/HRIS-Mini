@@ -14,8 +14,13 @@ return new class extends Migration
             $table->timestamp('notified_at')->nullable()->index();
         });
     }
+
     public function down(): void
     {
-        Schema::table('announcements', function (Blueprint $table) { $table->dropConstrainedForeignId('department_id'); $table->dropConstrainedForeignId('location_id'); $table->dropColumn('notified_at'); });
+        Schema::table('announcements', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('department_id');
+            $table->dropConstrainedForeignId('location_id');
+            $table->dropColumn('notified_at');
+        });
     }
 };

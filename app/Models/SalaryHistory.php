@@ -11,9 +11,10 @@ class SalaryHistory extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'effective_from' => 'date', 'effective_to' => 'date'];
+        return ['amount' => 'decimal:2', 'effective_from' => 'date:Y-m-d', 'effective_to' => 'date:Y-m-d'];
     }
 
+    /** @return BelongsTo<Employee, $this> */
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);

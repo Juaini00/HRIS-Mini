@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Employees;
 
+use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DeactivateEmployeeRequest extends FormRequest
@@ -11,8 +12,17 @@ class DeactivateEmployeeRequest extends FormRequest
         return $this->user()->can('deactivate', $this->route('employee'));
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
-        return ['ended_at' => ['required', 'date', 'after_or_equal:'.$this->route('employee')->joined_at->toDateString()], 'reason' => ['required', 'string', 'max:1000']];
+        $employee = $this->route('employee');
+        abort_unless($employee instanceof Employee, 404);
+
+        return [
+            'ended_at' => ['required', 'date', 'after_or_equal:'.$employee->joined_at->toDateString()],
+            'reason' => ['required', 'string', 'max:1000'],
+        ];
     }
 }

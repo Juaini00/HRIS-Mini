@@ -14,12 +14,18 @@ class NotificationController extends Controller
     {
         return Inertia::render('hris/notifications', ['notifications' => $request->user()->notifications()->latest()->paginate(30)]);
     }
+
     public function read(Request $request, string $notification): RedirectResponse
     {
-        $request->user()->notifications()->findOrFail($notification)->markAsRead(); return back();
+        $request->user()->notifications()->findOrFail($notification)->markAsRead();
+
+        return back();
     }
+
     public function readAll(Request $request): RedirectResponse
     {
-        $request->user()->unreadNotifications->markAsRead(); return back();
+        $request->user()->unreadNotifications->markAsRead();
+
+        return back();
     }
 }

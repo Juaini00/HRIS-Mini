@@ -2,11 +2,11 @@
 
 namespace App\Actions\Attendance;
 
+use App\Enums\LeaveRequestStatus;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
-use App\Enums\LeaveStatus;
 use App\Models\Setting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,10 +17,11 @@ class RecordAttendance
     public function checkIn(Employee $employee): Attendance
     {
         return DB::transaction(function () use ($employee): Attendance {
-            if (today()->isWeekend() || Holiday::query()->where('date', today())->exists() || LeaveRequest::query()->where('employee_id', $employee->id)->where('status', LeaveStatus::Approved)->where('start_date', '<=', today())->where('end_date', '>=', today())->exists()) {
+            $today = today()->toDateString();
+            if (today()->isWeekend() || Holiday::query()->where('date', $today)->exists() || LeaveRequest::query()->where('employee_id', $employee->id)->where('status', LeaveRequestStatus::Approved)->where('start_date', '<=', $today)->where('end_date', '>=', $today)->exists()) {
                 throw ValidationException::withMessages(['attendance' => 'Check-in tidak tersedia pada hari non-kerja atau saat cuti.']);
             }
-            if (Attendance::query()->where('employee_id', $employee->id)->where('date', today())->lockForUpdate()->exists()) {
+            if (Attendance::query()->where('employee_id', $employee->id)->where('date', $today)->lockForUpdate()->exists()) {
                 throw ValidationException::withMessages(['attendance' => 'Anda sudah check-in hari ini.']);
             }
             $now = now();
@@ -35,7 +36,7 @@ class RecordAttendance
     public function checkOut(Employee $employee): Attendance
     {
         return DB::transaction(function () use ($employee): Attendance {
-            $attendance = Attendance::query()->where('employee_id', $employee->id)->where('date', today())->lockForUpdate()->first();
+            $attendance = Attendance::query()->where('employee_id', $employee->id)->where('date', today()->toDateString())->lockForUpdate()->first();
             if (! $attendance || $attendance->checked_out_at) {
                 throw ValidationException::withMessages(['attendance' => 'Data check-in tidak ditemukan atau sudah selesai.']);
             }

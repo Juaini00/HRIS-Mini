@@ -12,12 +12,27 @@ class UpdateEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('employee'));
+        return $this->user()->can('update', $this->employee());
     }
 
-    public function rules(): array
+    /**
+     * The bound employee, typed. Route model binding guarantees the instance, but the
+     * router's signature is `object|string`, so narrow it once instead of everywhere.
+     */
+    private function employee(): Employee
     {
         $employee = $this->route('employee');
+        abort_unless($employee instanceof Employee, 404);
+
+        return $employee;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        $employee = $this->employee();
 
         return [
             'name' => ['required', 'string', 'max:100'],
@@ -38,10 +53,13 @@ class UpdateEmployeeRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return list<callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {
-            $employee = $this->route('employee');
+            $employee = $this->employee();
             $managerId = $this->integer('manager_id') ?: null;
             $visited = [];
             while ($managerId !== null) {

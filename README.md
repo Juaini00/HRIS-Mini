@@ -1,42 +1,136 @@
 # NusaHR — Human Resource Information System
 
-NusaHR is a production-oriented Laravel portfolio application for managing employees, organization structure, leave, attendance, simplified payroll, announcements, private documents, notifications, reports, settings, and audit history. The UI uses React + TypeScript through Inertia rather than a separate API application.
+An internal HR management application for small-to-medium companies: employees,
+organization structure, leave, attendance, simplified payroll, announcements, reports, and
+an audit trail.
 
 ## Screenshots
 
-Screenshot assets are intentionally not committed until they can be captured from a fully seeded build. After running the setup, capture desktop and mobile views of the dashboard, employee directory, leave approval, attendance, payroll review, and payslip into `docs/screenshots/`, then replace this clearly marked placeholder with the real images.
+> Not yet captured. To add them: run the app (see below), sign in with the demo accounts,
+> and save images to `docs/screenshots/`, then link them here. Useful pages: the role-aware
+> dashboard, employee list, leave approvals, payroll period, and a payslip.
+
+## Overview
+
+NusaHR is built as a **portfolio project**. The goal is code a senior reviewer would be
+comfortable inheriting: real authorization boundaries, transactional business workflows,
+meaningful tests, and honest documentation — rather than a wide surface of half-working
+screens.
+
+Payroll is deliberately simplified. It models earnings, deductions, attendance-based
+proration, and a publication lifecycle; it does **not** model any country's tax law or
+statutory reporting.
 
 ## Features
 
-- Fortify login, password reset, verified email, 2FA, passkeys, throttling, disabled public registration, and inactive-account blocking.
-- Four role experiences: Super Admin, HR Admin, Manager, and Employee, with backend policies and role-aware navigation.
-- Employee lifecycle, generated employee numbers, manager hierarchy validation, encrypted bank data, salary history, deactivation, and private documents.
-- Working-day-aware paid/unpaid and half-day leave, overlap prevention, attachments, reserved balances, review, cancellation, notifications, and audit trail.
-- Check-in/out, configurable schedule tolerance, late/worked minutes, HR correction, direct-team visibility, idempotent absence processing, leave/holiday/weekend handling, and incomplete checkout detection.
-- Effective-dated salary components, fixed/percentage calculations, absence/unpaid-leave deductions, manual adjustments, deterministic draft regeneration, transactional publication, CSV export, and printable private payslips.
-- Draft/scheduled announcements, role/department/location audiences, read tracking, scheduled notifications, and a notification center.
-- Real dashboard metrics, employee/attendance/leave/payroll CSV reports, Super Admin settings, masked audit viewer, and coherent demo data.
-- Neon-compatible `DATABASE_URL`, local Docker application/PostgreSQL/Mailpit/queue services, scheduler commands, CI PostgreSQL service, Pest coverage, Larastan, Pint, ESLint, Prettier, TypeScript, and Vite scripts.
+- **Authentication** — login, logout, password reset, email verification, two-factor
+  authentication, passkeys, rate limiting, and an active/inactive account gate. Public
+  registration is disabled by design; only authorized administrators create accounts.
+- **Role-based access control** — 4 roles and 42 granular permissions via
+  spatie/laravel-permission.
+- **Employees** — HR records separate from login identities, `EMP-YYYY-NNNN` numbering,
+  reporting hierarchy with cycle prevention, salary history, confidential-field protection,
+  a tabbed detail page (profile, employment, attendance, leave, compensation, documents,
+  activity), and profile-photo upload.
+- **Organization** — company profile plus per-entity CRUD screens for departments
+  (hierarchical), positions with salary bands, office locations, employment types, leave
+  types, and public holidays, each with search, sortable columns, and pagination.
+- **Leave** — configurable leave types, balances, half-day sessions, overlap and balance
+  validation, one-level approval, notifications, and personal/team/company calendars with
+  holiday overlay.
+- **Attendance** — check in/out with late calculation, work modes, HR corrections with
+  mandatory reasons, an employee-initiated correction request workflow, and idempotent
+  daily absence processing.
+- **Payroll** — periods with a draft → generated → published → closed lifecycle,
+  deterministic calculation, snapshotted payslip lines, and a printable payslip.
+- **Announcements** — draft/scheduled/published/archived, audience targeting, read
+  tracking, and scheduled publishing.
+- **Dashboards** — role-aware, built from live aggregate queries, with Recharts charts.
+- **Reports** — 15 reports with CSV export, permission-scoped and sanitised against
+  spreadsheet formula injection.
+- **Audit log** — a single writer that redacts secrets before persisting.
 
-## Stack
+## Role capabilities
 
-Laravel 13, PHP 8.3+, Fortify, Inertia 3, React 19, TypeScript, Tailwind CSS 4, shadcn-style Radix components, Wayfinder, Pest 5, PostgreSQL/Neon, database queues/cache/sessions, Vite, and Docker Compose. Exact selected versions are locked in `composer.lock` and `package-lock.json`.
+| | Super Admin | HR Admin | Manager | Employee |
+| --- | :-: | :-: | :-: | :-: |
+| All modules | ✅ | — | — | — |
+| Manage roles and permissions | ✅ | — | — | — |
+| Manage employees and org data | ✅ | ✅ | — | — |
+| See compensation and bank details | ✅ | ✅ | — | own only |
+| Approve leave | ✅ | ✅ | own team | — |
+| View team attendance | ✅ | ✅ | own team | own only |
+| Generate and publish payroll | ✅ | ✅ | — | — |
+| View payslips | ✅ | ✅ | own only | own only |
+| Reports | all 15 | all 15 | team-safe subset | — |
+| Audit logs | ✅ | ✅ | — | — |
 
-## Architecture
+Full matrix: [`docs/roles-and-permissions.md`](docs/roles-and-permissions.md).
 
-Controllers handle HTTP coordination; Form Requests validate and authorize input; policies protect records; focused actions own transactional state transitions; Eloquent owns persistence; queued database notifications and scheduled commands handle asynchronous work. No generic repository layer is used. See [architecture](docs/architecture.md), [database design](docs/database-design.md), [business rules](docs/business-rules.md), and the [role matrix](docs/roles-and-permissions.md).
+## Technology stack
+
+| Layer | Choice |
+| --- | --- |
+| Backend | Laravel 13, PHP 8.5 |
+| Database | PostgreSQL 17 (SQLite in tests) |
+| Auth | Laravel Fortify (React starter kit) |
+| Authorization | spatie/laravel-permission 8 |
+| Frontend | Inertia.js v3, React 19, TypeScript |
+| Styling | Tailwind CSS v4, shadcn/ui, Lucide |
+| Charts | Recharts |
+| Tests | Pest 5 |
+| Static analysis | Larastan (PHPStan level 7) |
+| Formatting | Laravel Pint, Prettier, ESLint |
+| Build | Vite 8 |
+
+## Architecture overview
+
+Thin controllers, Form Requests for validation and authorization, Action classes for
+multi-step workflows, policies for record-level access, and PHP enums instead of magic
+strings. React is served through Inertia from the same Laravel app — no separate API, no
+standalone SPA. No repository layer wraps Eloquent, and the reasoning is written down.
+
+Details: [`docs/architecture.md`](docs/architecture.md).
+
+## Main business workflows
+
+Leave approval, attendance state transitions, and payroll generation/publication are
+documented with Mermaid diagrams in
+[`docs/business-rules.md`](docs/business-rules.md).
+
+## Database overview
+
+Entity relationship diagram, constraints, indexing decisions, money handling, snapshots,
+and the deletion strategy: [`docs/database-design.md`](docs/database-design.md).
+
+## Security decisions
+
+- Authorization is enforced in the backend on every route. Hidden UI is convenience only.
+- Confidential employee fields are `$hidden` on the model and unhidden only after a policy
+  check. Bank account and tax numbers are encrypted at rest.
+- Managers cannot see compensation. The dashboard omits the payroll figure from the
+  payload entirely rather than hiding it client-side.
+- Employee documents are never publicly reachable: generated filenames, hidden paths, and
+  downloads through an authorized controller action.
+- CSV exports sanitise cells beginning `=`, `+`, `-`, or `@` to defuse spreadsheet formula
+  injection, and enforce the same permissions as the on-screen views.
+- Audit entries redact passwords, tokens, 2FA secrets, bank accounts, and salaries.
+- The Super Admin bypass is a deliberate `Gate::before`, so a missing seeder cannot lock
+  the owner out.
 
 ## Requirements
 
-- PHP 8.3+ with `pdo_pgsql`, mbstring, OpenSSL, fileinfo, intl, and standard Laravel extensions.
-- Composer 2, Node 22+, npm, and PostgreSQL 15+ or a Neon database.
+PHP 8.3+ with `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `mbstring`, `openssl`,
+`pdo_pgsql`, `tokenizer`, `xml`, `zip`; Composer; Node 20+; PostgreSQL 14+ (or Docker).
 
-## Installation from a clean clone
+## Local installation
 
 ```bash
+git clone <repository-url> && cd HRIS-Mini
 cp .env.example .env
+# configure the database (see below)
 composer install
-npm ci
+npm install
 php artisan key:generate
 php artisan storage:link
 php artisan migrate --seed
@@ -44,92 +138,170 @@ npm run build
 php artisan serve
 ```
 
-In separate processes:
+Then open <http://localhost:8000>.
+
+Convenience wrappers exist in the `Makefile` (`make setup`, `make test`, `make lint`,
+`make dev`, `make fresh`); each one just calls the underlying Artisan and npm commands.
+
+### Database options
+
+**Docker (no host PostgreSQL password needed):**
 
 ```bash
-php artisan queue:work --tries=3
-php artisan schedule:work
+docker run -d --name nusahr-pg \
+  -e POSTGRES_DB=nusahr -e POSTGRES_USER=nusahr -e POSTGRES_PASSWORD=nusahr \
+  -p 5433:5432 postgres:17-alpine
 ```
 
-`make setup`, `make test`, `make lint`, `make build`, and `make dev` expose the same commands as optional shortcuts.
+Then in `.env`: `DB_HOST=127.0.0.1`, `DB_PORT=5433`, database/user/password `nusahr`.
+Port 5433 avoids clashing with a PostgreSQL service already on 5432.
 
-## Neon PostgreSQL
+**Local PostgreSQL:**
 
-Place the complete pooled Neon URL only in the untracked `.env` or deployment secret manager:
-
-```dotenv
-DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
-DB_CONNECTION=pgsql
+```sql
+CREATE ROLE nusahr LOGIN PASSWORD 'nusahr' CREATEDB;
+CREATE DATABASE nusahr OWNER nusahr;
 ```
 
-The URL takes precedence while conventional `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` remain local PostgreSQL fallbacks. Never commit, print, log, or screenshot a real URL. Verify the target database before migrations and never use `migrate:fresh` against shared or production Neon.
+**Managed PostgreSQL:** set `DATABASE_URL` and `DB_SSLMODE=require`. If your provider
+offers a pooled and a direct endpoint, use the **direct** one — poolers in transaction mode
+break migrations with `SQLSTATE 25P02`.
 
-## Docker path
+## Docker Compose
 
-Generate an application key in `.env`, then run:
+`compose.yaml` provides the app, PostgreSQL 17, and Mailpit:
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 docker compose exec app php artisan migrate --seed
 ```
 
-The application is exposed at `http://localhost:8000`, PostgreSQL at port `5432`, and Mailpit at `http://localhost:8025`. The queue service starts with the stack. Docker is optional when using Neon.
+Mailpit's inbox is at <http://localhost:8025>. Docker is not required if you point
+`DATABASE_URL` at a hosted database.
 
-## Demo accounts
+## Queue setup
 
-All local demo users initially use `NusaHR123!`:
+Notifications are queued on the `database` driver:
 
-| Role | Email |
-|---|---|
-| Super Admin | `admin@nusahr.test` |
-| HR Admin | `hr@nusahr.test` |
-| Manager | `manager@nusahr.test` |
-| Employee | `employee@nusahr.test` |
+```bash
+php artisan queue:work --tries=3
+```
 
-Change or remove demo credentials outside a local portfolio environment.
+The application works without a worker — critical state changes complete inside their
+transactions — but notifications will sit in the queue.
 
-## Scheduler
+## Scheduler setup
 
-- `nusahr:process-absences` — weekdays at 23:30.
-- `nusahr:publish-announcements` — every five minutes.
-- `nusahr:notify-expiring-documents` — daily at 08:00.
+```bash
+php artisan schedule:work        # local, foreground
+```
 
-Production cron must invoke `php artisan schedule:run` every minute.
+Production uses one cron entry:
 
-## Testing and code quality
+```
+* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Scheduled commands, all idempotent: `nusahr:process-absences`,
+`nusahr:publish-announcements`, `nusahr:notify-expiring-documents`.
+
+## Mail testing
+
+`MAIL_MAILER=log` writes mail to `storage/logs/laravel.log`. With Docker Compose, point
+`MAIL_MAILER=smtp`, `MAIL_HOST=mailpit`, `MAIL_PORT=1025` and read it in the Mailpit UI.
+
+## Demo data
+
+`php artisan migrate:fresh --seed` builds a coherent fictional company in about 20 seconds:
+
+| | |
+| --- | --- |
+| Company / departments / positions | 1 / 8 / 15 |
+| Locations / employment types / leave types | 3 / 5 / 6 |
+| Users | 49 — 1 Super Admin, 2 HR, 6 managers, 40 employees |
+| Attendance | ~2,800 rows over 60 days, covering all seven statuses |
+| Leave requests | 30 across pending, approved, rejected, cancelled |
+| Payroll periods | 3 — closed, published, draft |
+| Announcements | 10 across all statuses, with read tracking |
+| Audit log entries | 60 |
+
+Faker is seeded with a fixed value, so the same data is produced every run.
+
+All names, addresses, and identifiers are fictional.
+
+## Demo credentials
+
+**Local and demo environments only. Never use these as production defaults.**
+
+| Email | Password | Role |
+| --- | --- | --- |
+| `admin@nusahr.test` | `password` | Super Admin |
+| `hr@nusahr.test` | `password` | HR Admin |
+| `manager@nusahr.test` | `password` | Manager |
+| `employee@nusahr.test` | `password` | Employee |
+
+Additional accounts follow the same password: `hr.admin@nusahr.test`,
+`manager1`–`manager5@nusahr.test`, `employee1`–`employee39@nusahr.test`.
+
+## Testing
 
 ```bash
 php artisan test --compact
-vendor/bin/pint --format agent
-composer types:check
-npm run types:check
-npm run lint:check
-npm run format:check
-npm run build
-composer audit
-npm audit --omit=dev
 ```
 
-Tests use isolated SQLite by default; CI additionally boots PostgreSQL for clean migration and seed validation. They must never point at shared Neon credentials. See [testing](docs/testing.md).
+Tests run against in-memory SQLite and never touch your configured database. See
+[`docs/testing.md`](docs/testing.md) — including why `phpunit.xml` blanks `DB_URL`.
 
-## Security decisions
+## Code-quality commands
 
-Private HR files are served only through authorized controllers from a non-public disk. Salary and bank fields are hidden from default serialization; bank data is encrypted. Leave/payroll transitions use transactions and row locks. Published payroll cannot be regenerated or adjusted. Audit metadata recursively redacts secrets and sensitive employee values. Backend policy enforcement never relies on hidden frontend links.
+```bash
+vendor/bin/phpstan analyse    # Larastan level 7
+vendor/bin/pint               # PHP formatting (--test to check only)
+npm run types:check           # tsc --noEmit
+npm run lint:check            # ESLint
+npm run format:check          # Prettier
+```
+
+## Production build
+
+```bash
+npm run build
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+```
+
+Full sequence: [`docs/deployment.md`](docs/deployment.md).
 
 ## Troubleshooting
 
-- Missing Vite manifest: run `npm ci && npm run build`, or `npm run dev` locally.
-- PostgreSQL driver errors: enable PHP `pdo_pgsql`.
-- Neon connection failures: retain `sslmode=require`, confirm the pooled hostname, and ensure outbound TLS access.
-- Queued notifications not appearing: run `php artisan queue:work` and inspect `php artisan queue:failed`.
-- Uploaded public assets unavailable: run `php artisan storage:link`; private employee documents intentionally have no public URL.
+**`Unable to locate file in Vite manifest`** — assets are not built. Run `npm run build`,
+or `npm run dev` while developing.
 
-## Known product boundaries
+**PHPStan dies with `reached configured PHP memory limit`** — raise `memory_limit` in
+`php.ini` to `1G`, or pass `--memory-limit=1G`.
 
-Payroll intentionally models portfolio-grade simplified gross calculations; statutory Indonesian PPh 21/BPJS compliance and bank disbursement integrations are future extensions. PDF generation is optional; the implemented payslip uses an authorized print view. Advanced geofencing, biometric devices, SSO, and user impersonation are outside the required core.
+**Migrations fail with `SQLSTATE 25P02`** — you are connected through a transaction-mode
+connection pooler. Use the direct database endpoint.
+
+**Frontend changes do not appear** — run `npm run build`, or `composer run dev` for the
+full development stack.
+
+**Seeder appears to hang** — `today()` returns a `CarbonImmutable` in this application, so
+`$date->addDay()` inside a loop does not advance the cursor. Reassign: `$date = $date->addDay()`.
+
+## Known limitations
+
+Implemented and verified are the features listed above. Not yet built, stated plainly
+rather than implied:
+
+- PDF payslip export is not implemented; the payslip page is print-styled instead.
+- Geolocation-based attendance is not implemented, though the location columns exist.
 
 ## Future improvements
 
-Statutory payroll plugins, SSO/SCIM, configurable multi-step approval chains, object-storage antivirus scanning, payroll bank integrations, advanced workforce forecasting, and browser visual-regression coverage.
+Multi-level leave approval, employee self-service correction requests, PDF export, richer
+announcement editing with sanitised HTML, per-department dashboards for managers,
+scheduled report delivery by email, and an org-chart visualisation.
 
-See [deployment](docs/deployment.md) for production operations. Licensed under MIT.
+## License
+
+MIT.

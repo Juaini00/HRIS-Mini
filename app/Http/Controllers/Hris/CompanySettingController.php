@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Hris;
 
 use App\Actions\Audit\WriteAuditLog;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateCompanySettingsRequest;
 use App\Models\Setting;
@@ -16,7 +17,7 @@ class CompanySettingController extends Controller
 {
     public function edit(Request $request): Response
     {
-        abort_unless($request->user()->role === \App\Enums\UserRole::SuperAdmin, 403);
+        abort_unless($request->user()->role === UserRole::SuperAdmin, 403);
 
         return Inertia::render('hris/settings', [
             'settings' => Setting::query()->pluck('value', 'key'),

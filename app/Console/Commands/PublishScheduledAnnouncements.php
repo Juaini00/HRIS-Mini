@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Events\AnnouncementPublished;
 use App\Models\Announcement;
-use App\Models\AuditLog;
 use App\Models\User;
 use App\Notifications\AnnouncementPublishedNotification;
 use Illuminate\Console\Command;
@@ -11,6 +11,7 @@ use Illuminate\Console\Command;
 class PublishScheduledAnnouncements extends Command
 {
     protected $signature = 'nusahr:publish-announcements';
+
     protected $description = 'Publikasikan dan beri notifikasi untuk pengumuman terjadwal';
 
     public function handle(): int
@@ -23,7 +24,7 @@ class PublishScheduledAnnouncements extends Command
             })->get();
             $users->each->notify(new AnnouncementPublishedNotification($announcement));
             $announcement->update(['notified_at' => now()]);
-            AuditLog::create(['event' => 'announcement.published', 'auditable_type' => $announcement->getMorphClass(), 'auditable_id' => $announcement->id, 'metadata' => ['recipient_count' => $users->count()]]);
+            AnnouncementPublished::dispatch($announcement);
         });
 
         return self::SUCCESS;
