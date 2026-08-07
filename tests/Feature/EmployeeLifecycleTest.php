@@ -26,7 +26,7 @@ test('HR creates employee and user transactionally with salary history', functio
     ])->assertRedirect()->assertSessionHasNoErrors();
 
     $employee = Employee::whereHas('user', fn ($query) => $query->where('email', 'new@example.test'))->firstOrFail();
-    expect($employee->employee_number)->toStartWith('NSH-')
+    expect($employee->employee_number)->toBe('EMP-2026-0001')
         ->and($employee->salaryHistories)->toHaveCount(1);
 });
 

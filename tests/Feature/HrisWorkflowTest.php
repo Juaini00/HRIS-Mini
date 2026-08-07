@@ -4,7 +4,7 @@ use App\Actions\Attendance\RecordAttendance;
 use App\Actions\Leave\ReviewLeaveRequest;
 use App\Actions\Leave\SubmitLeaveRequest;
 use App\Actions\Payroll\GeneratePayrollPeriod;
-use App\Enums\LeaveStatus;
+use App\Enums\LeaveRequestStatus;
 use App\Enums\UserRole;
 use App\Models\Department;
 use App\Models\Employee;
@@ -13,6 +13,7 @@ use App\Models\LeaveType;
 use App\Models\Position;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Validation\ValidationException;
 
 function hrisEmployee(UserRole $role = UserRole::Employee): Employee
 {
@@ -46,7 +47,7 @@ test('leave submission reserves balance and approval consumes it', function () {
 
     expect((float) $balance->refresh()->pending)->toBe(2.0);
 
-    app(ReviewLeaveRequest::class)->handle($request, $reviewer, LeaveStatus::Approved);
+    app(ReviewLeaveRequest::class)->handle($request, $reviewer, LeaveRequestStatus::Approved);
 
     expect((float) $balance->refresh()->pending)->toBe(0.0)
         ->and((float) $balance->used)->toBe(2.0);
@@ -59,7 +60,7 @@ test('attendance cannot be checked in twice', function () {
 
     $action->checkIn($employee);
     $action->checkIn($employee);
-})->throws(Illuminate\Validation\ValidationException::class);
+})->throws(ValidationException::class);
 
 test('payroll generation snapshots every active employee exactly once', function () {
     hrisEmployee();
