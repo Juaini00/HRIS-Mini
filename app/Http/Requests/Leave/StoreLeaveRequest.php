@@ -9,8 +9,14 @@ use Illuminate\Validation\Validator;
 
 class StoreLeaveRequest extends FormRequest
 {
-    public function authorize(): bool { return $this->user()->employee !== null; }
+    public function authorize(): bool
+    {
+        return $this->user()->employee !== null;
+    }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -23,6 +29,9 @@ class StoreLeaveRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return list<callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {

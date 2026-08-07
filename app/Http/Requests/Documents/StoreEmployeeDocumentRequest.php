@@ -11,6 +11,9 @@ class StoreEmployeeDocumentRequest extends FormRequest
         return $this->user()->isAdministrator();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
