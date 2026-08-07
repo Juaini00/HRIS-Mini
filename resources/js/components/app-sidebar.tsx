@@ -1,5 +1,17 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    Bell,
+    BellRing,
+    CalendarDays,
+    Network,
+    Clock3,
+    LayoutGrid,
+    Users,
+    WalletCards,
+    Settings,
+    ShieldCheck,
+    FileChartColumn,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -22,22 +34,34 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    { title: 'Karyawan', href: '/employees', icon: Users },
+    { title: 'Organisasi', href: '/organization', icon: Network },
+    { title: 'Cuti', href: '/leave', icon: CalendarDays },
+    { title: 'Kehadiran', href: '/attendance', icon: Clock3 },
+    { title: 'Payroll', href: '/payroll', icon: WalletCards },
+    { title: 'Pengumuman', href: '/announcements', icon: Bell },
+    { title: 'Laporan', href: '/reports', icon: FileChartColumn },
+    { title: 'Notifikasi', href: '/notifications', icon: BellRing },
+    { title: 'Pengaturan', href: '/company-settings', icon: Settings },
+    { title: 'Audit Log', href: '/audit-logs', icon: ShieldCheck },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
+    const { auth } = usePage().props;
+    const visibleItems = mainNavItems
+        .filter(
+            (item) =>
+                !['Karyawan', 'Organisasi', 'Laporan'].includes(item.title) ||
+                ['super_admin', 'hr_admin'].includes(auth.user.role),
+        )
+        .filter(
+            (item) =>
+                !['Pengaturan', 'Audit Log'].includes(item.title) ||
+                auth.user.role === 'super_admin',
+        );
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -53,7 +77,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={visibleItems} />
             </SidebarContent>
 
             <SidebarFooter>
