@@ -57,9 +57,9 @@ class CreateEmployee
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                // Employees set their own password through the reset flow; this placeholder
-                // is never communicated to anyone.
-                'password' => Hash::make(Str::password(32)),
+                // Use the operator-supplied password when given; otherwise store an
+                // unknowable placeholder and let the employee set one via the reset flow.
+                'password' => Hash::make(filled($data['password'] ?? null) ? $data['password'] : Str::password(32)),
                 'role' => $data['role'],
                 'is_active' => true,
                 'email_verified_at' => now(),
@@ -68,7 +68,7 @@ class CreateEmployee
             $joinedAt = $data['joined_at'];
 
             $employee = $user->employee()->create([
-                ...Arr::except($data, ['name', 'email', 'role', 'employee_number']),
+                ...Arr::except($data, ['name', 'email', 'role', 'employee_number', 'password']),
                 'employee_number' => $explicitNumber ?? $this->numbers->next((int) Carbon::parse($joinedAt)->year),
                 'employment_status' => $data['employment_status'] ?? EmploymentStatus::Active,
                 'created_by' => $actor->id,

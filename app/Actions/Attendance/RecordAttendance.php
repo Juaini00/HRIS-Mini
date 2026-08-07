@@ -16,12 +16,44 @@ use Illuminate\Validation\ValidationException;
 
 class RecordAttendance
 {
+    /**
+     * Why check-in is unavailable for this employee today, or null when it is allowed.
+     *
+     * Drives both the guard below and the disabled-button hint on the attendance page,
+     * so the reason the UI shows always matches the reason the action enforces.
+     */
+    public function checkInBlockedReason(Employee $employee): ?string
+    {
+        $today = today()->toDateString();
+
+        if (today()->isWeekend()) {
+            return 'Check-in hanya tersedia pada hari kerja (Senin–Jumat).';
+        }
+
+        if (Holiday::query()->where('date', $today)->exists()) {
+            return 'Hari ini hari libur, jadi check-in tidak tersedia.';
+        }
+
+        $onApprovedLeave = LeaveRequest::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', LeaveRequestStatus::Approved)
+            ->where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->exists();
+
+        if ($onApprovedLeave) {
+            return 'Anda sedang cuti yang telah disetujui, jadi tidak perlu check-in.';
+        }
+
+        return null;
+    }
+
     public function checkIn(Employee $employee): Attendance
     {
         return DB::transaction(function () use ($employee): Attendance {
             $today = today()->toDateString();
-            if (today()->isWeekend() || Holiday::query()->where('date', $today)->exists() || LeaveRequest::query()->where('employee_id', $employee->id)->where('status', LeaveRequestStatus::Approved)->where('start_date', '<=', $today)->where('end_date', '>=', $today)->exists()) {
-                throw ValidationException::withMessages(['attendance' => 'Check-in tidak tersedia pada hari non-kerja atau saat cuti.']);
+            if ($reason = $this->checkInBlockedReason($employee)) {
+                throw ValidationException::withMessages(['attendance' => $reason]);
             }
             if (Attendance::query()->where('employee_id', $employee->id)->where('date', $today)->lockForUpdate()->exists()) {
                 throw ValidationException::withMessages(['attendance' => 'Anda sudah check-in hari ini.']);

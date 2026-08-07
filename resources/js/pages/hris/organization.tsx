@@ -37,7 +37,14 @@ type Props = {
 type FieldSpec = {
     name: string;
     label: string;
-    type?: 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'color';
+    type?:
+        | 'text'
+        | 'number'
+        | 'currency'
+        | 'date'
+        | 'select'
+        | 'checkbox'
+        | 'color';
     required?: boolean;
     options?: 'departments';
 };
@@ -80,8 +87,8 @@ const SCHEMA: Record<
             { name: 'code', label: 'Kode' },
             { name: 'name', label: 'Nama', required: true },
             { name: 'level', label: 'Level', type: 'number', required: true },
-            { name: 'min_salary', label: 'Gaji minimum', type: 'number' },
-            { name: 'max_salary', label: 'Gaji maksimum', type: 'number' },
+            { name: 'min_salary', label: 'Gaji minimum', type: 'currency' },
+            { name: 'max_salary', label: 'Gaji maksimum', type: 'currency' },
             { name: 'is_active', label: 'Aktif', type: 'checkbox' },
         ],
     },
@@ -557,6 +564,40 @@ export default function Organization({
                                                 </option>
                                             ))}
                                         </select>
+                                    ) : field.type === 'currency' ? (
+                                        <div className="relative">
+                                            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">
+                                                Rp
+                                            </span>
+                                            <Input
+                                                className="pl-9"
+                                                id={id}
+                                                inputMode="numeric"
+                                                onChange={(event) =>
+                                                    setForm({
+                                                        ...form,
+                                                        [field.name]:
+                                                            event.target.value.replace(
+                                                                /\D/g,
+                                                                '',
+                                                            ),
+                                                    })
+                                                }
+                                                value={
+                                                    value !== '' &&
+                                                    value !== undefined &&
+                                                    Number.isFinite(
+                                                        Number(value),
+                                                    )
+                                                        ? Math.round(
+                                                              Number(value),
+                                                          ).toLocaleString(
+                                                              'id-ID',
+                                                          )
+                                                        : ''
+                                                }
+                                            />
+                                        </div>
                                     ) : (
                                         <Input
                                             id={id}

@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Hris;
 
 use App\Actions\Audit\WriteAuditLog;
 use App\Actions\Employees\CreateEmployee;
+use App\Enums\EmploymentStatus;
 use App\Enums\PayrollPeriodStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employees\DeactivateEmployeeRequest;
 use App\Http\Requests\Employees\StoreEmployeeRequest;
+use App\Http\Requests\Employees\UpdateEmployeeProfileRequest;
 use App\Http\Requests\Employees\UpdateEmployeeRequest;
 use App\Models\AuditLog;
 use App\Models\Department;
@@ -35,8 +37,22 @@ class EmployeeController extends Controller
             $query->where('manager_id', $request->user()->employee?->id);
         }
 
+        $status = $request->string('status', 'all')->toString();
+        if (in_array($status, array_column(EmploymentStatus::cases(), 'value'), true)) {
+            $query->where('employment_status', $status);
+        }
+
+        if ($search = $request->string('search')->toString()) {
+            $query->where(fn (Builder $q) => $q
+                ->where('employee_number', 'like', "%{$search}%")
+                ->orWhereHas('user', fn (Builder $u) => $u
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")));
+        }
+
         return Inertia::render('hris/employees', [
             'employees' => $query->paginate(20)->withQueryString(),
+            'filters' => ['search' => $search ?: null, 'status' => $status],
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(),
             'positions' => Position::query()->where('is_active', true)->orderBy('name')->get(),
             'locations' => Location::query()->where('is_active', true)->orderBy('name')->get(),
@@ -96,7 +112,7 @@ class EmployeeController extends Controller
                     ->where('employee_id', $employee->id)
                     ->where('date', '>=', $monthStart)
                     ->groupBy('status')
-                    ->selectRaw('count(*) as total')
+                    ->selectRaw('status, count(*) as total')
                     ->pluck('total', 'status'),
                 'recent' => $employee->attendances()
                     ->orderByDesc('date')
@@ -185,8 +201,11 @@ class EmployeeController extends Controller
             $employee->user->update(['name' => $data['name'], 'email' => $data['email'], 'role' => $data['role']]);
             $employee->update(collect($data)->except(['name', 'email', 'role'])->all());
             if ($salaryChanged) {
-                $employee->salaryHistories()->whereNull('effective_to')->update(['effective_to' => today()->subDay()]);
-                $employee->salaryHistories()->create(['amount' => $data['basic_salary'], 'effective_from' => today(), 'created_by' => $request->user()->id, 'notes' => 'Profile update']);
+                $employee->salaryHistories()->whereNull('effective_to')->where('effective_from', '<', today())->update(['effective_to' => today()->subDay()]);
+                $employee->salaryHistories()->updateOrCreate(
+                    ['effective_from' => today()],
+                    ['amount' => $data['basic_salary'], 'created_by' => $request->user()->id, 'notes' => 'Profile update'],
+                );
             }
         });
         $audit->handle($request, 'employee.updated', $employee, ['before' => $before, 'after' => $employee->fresh()->only(array_keys($before))]);
@@ -194,10 +213,21 @@ class EmployeeController extends Controller
         return back()->with('success', 'Data karyawan diperbarui.');
     }
 
+    public function updateProfile(UpdateEmployeeProfileRequest $request, Employee $employee, WriteAuditLog $audit): RedirectResponse
+    {
+        $employee->update($request->validated());
+        $audit->handle($request, 'employee.profile-updated', $employee, ['fields' => array_keys($request->validated())]);
+
+        return back()->with('success', 'Data pribadi karyawan diperbarui.');
+    }
+
     public function deactivate(DeactivateEmployeeRequest $request, Employee $employee, WriteAuditLog $audit): RedirectResponse
     {
         DB::transaction(function () use ($employee, $request): void {
-            $employee->update(['ended_at' => $request->date('ended_at')]);
+            $employee->update([
+                'ended_at' => $request->date('ended_at'),
+                'employment_status' => $request->input('employment_status', EmploymentStatus::Resigned->value),
+            ]);
             $employee->user->update(['is_active' => false]);
             $employee->reports()->update(['manager_id' => null]);
         });

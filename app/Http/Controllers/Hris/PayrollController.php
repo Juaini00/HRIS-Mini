@@ -53,6 +53,15 @@ class PayrollController extends Controller
         return back()->with('success', 'Payroll berhasil dibuat.');
     }
 
+    public function recompute(Request $request, PayrollPeriod $payrollPeriod, GeneratePayrollPeriod $generate, WriteAuditLog $audit): RedirectResponse
+    {
+        Gate::authorize('manage', PayrollPeriod::class);
+        $period = $generate->handle(['name' => $payrollPeriod->name, 'starts_on' => $payrollPeriod->starts_on->toDateString(), 'ends_on' => $payrollPeriod->ends_on->toDateString()]);
+        $audit->handle($request, 'payroll.recomputed', $period, ['records' => $period->records->count()]);
+
+        return back()->with('success', 'Payroll dihitung ulang.');
+    }
+
     public function adjustment(StorePayrollAdjustmentRequest $request, PayrollRecord $payrollRecord, CalculateEmployeePayroll $calculator, WriteAuditLog $audit): RedirectResponse
     {
         $payrollRecord->items()->create([...$request->validated(), 'is_manual' => true, 'created_by' => $request->user()->id]);
@@ -65,22 +74,40 @@ class PayrollController extends Controller
     public function component(Request $request, WriteAuditLog $audit): RedirectResponse
     {
         Gate::authorize('manage', PayrollPeriod::class);
-        $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'type' => ['required', 'in:earning,deduction'], 'calculation_type' => ['required', 'in:fixed,percentage'], 'value' => ['required', 'numeric', 'min:0'], 'is_taxable' => ['boolean']]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:100'], 'code' => ['nullable', 'string', 'max:50', 'unique:salary_components,code'], 'type' => ['required', 'in:earning,deduction'], 'calculation_type' => ['required', 'in:fixed,percentage'], 'value' => ['required', 'numeric', 'min:0'], 'is_taxable' => ['boolean']]);
         $component = SalaryComponent::create($data);
         $audit->handle($request, 'salary-component.created', $component);
 
         return back()->with('success', 'Komponen gaji ditambahkan.');
     }
 
-    public function assignComponent(Request $request, SalaryComponent $salaryComponent, WriteAuditLog $audit): RedirectResponse
+    public function assignComponent(Request $request, SalaryComponent $salaryComponent, CalculateEmployeePayroll $calculator, WriteAuditLog $audit): RedirectResponse
     {
         Gate::authorize('manage', PayrollPeriod::class);
         $data = $request->validate(['employee_id' => ['required', 'exists:employees,id'], 'override_value' => ['nullable', 'numeric', 'min:0'], 'effective_from' => ['required', 'date'], 'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from']]);
         $employee = Employee::query()->whereKey($data['employee_id'])->firstOrFail();
-        $employee->salaryComponents()->attach($salaryComponent->id, Arr::except($data, 'employee_id'));
+        DB::transaction(function () use ($employee, $salaryComponent, $data): void {
+            $employee->salaryComponents()->detach($salaryComponent->id);
+            $employee->salaryComponents()->attach($salaryComponent->id, Arr::only($data, ['override_value', 'effective_from', 'effective_to']));
+        });
+        $this->recomputeDraftPeriods($calculator, $employee, $data['effective_from'], $data['effective_to'] ?? null);
         $audit->handle($request, 'salary-component.assigned', $salaryComponent, ['employee_id' => $employee->id]);
 
-        return back()->with('success', 'Komponen gaji ditetapkan.');
+        return back()->with('success', 'Komponen gaji ditetapkan dan payroll draft dihitung ulang.');
+    }
+
+    /**
+     * Recalculate the employee's records in every draft period the assignment window overlaps.
+     */
+    private function recomputeDraftPeriods(CalculateEmployeePayroll $calculator, Employee $employee, string $effectiveFrom, ?string $effectiveTo): void
+    {
+        PayrollPeriod::query()
+            ->where('status', PayrollPeriodStatus::Draft)
+            ->whereDate('ends_on', '>=', $effectiveFrom)
+            ->when($effectiveTo !== null, fn ($query) => $query->whereDate('starts_on', '<=', $effectiveTo))
+            ->whereDate('ends_on', '>=', $employee->joined_at)
+            ->when($employee->ended_at !== null, fn ($query) => $query->whereDate('starts_on', '<=', $employee->ended_at))
+            ->each(fn (PayrollPeriod $period) => $calculator->handle($period, $employee));
     }
 
     public function publish(Request $request, PayrollPeriod $payrollPeriod): RedirectResponse

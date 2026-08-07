@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Employees;
 
+use App\Enums\EmploymentStatus;
 use App\Models\Employee;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class DeactivateEmployeeRequest extends FormRequest
 {
@@ -23,6 +25,7 @@ class DeactivateEmployeeRequest extends FormRequest
         return [
             'ended_at' => ['required', 'date', 'after_or_equal:'.$employee->joined_at->toDateString()],
             'reason' => ['required', 'string', 'max:1000'],
+            'employment_status' => ['nullable', Rule::in([EmploymentStatus::Resigned->value, EmploymentStatus::Terminated->value])],
         ];
     }
 }

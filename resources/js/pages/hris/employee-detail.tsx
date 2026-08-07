@@ -1,6 +1,7 @@
 import { Form, Head, Link, router } from '@inertiajs/react';
 import { Download, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { CurrencyInput } from '@/components/currency-input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -197,6 +198,7 @@ export default function EmployeeDetail({
     const photoInput = useRef<HTMLInputElement>(null);
     const [confirmingDeactivate, setConfirmingDeactivate] = useState(false);
     const [deactivateReason, setDeactivateReason] = useState('');
+    const [deactivateStatus, setDeactivateStatus] = useState('resigned');
 
     const uploadPhoto = (file: File) => {
         router.post(
@@ -212,6 +214,7 @@ export default function EmployeeDetail({
             {
                 ended_at: new Date().toISOString().slice(0, 10),
                 reason: deactivateReason,
+                employment_status: deactivateStatus,
             },
             { onFinish: () => setConfirmingDeactivate(false) },
         );
@@ -442,6 +445,288 @@ export default function EmployeeDetail({
                                             }
                                         />
                                     </FieldGrid>
+                                </CardContent>
+                            </Card>
+                        ) : null}
+
+                        {canUpdate ? (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">
+                                        Ubah data pribadi
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Form
+                                        action={`/employees/${employee.id}/profile`}
+                                        className="grid gap-3 md:grid-cols-3"
+                                        method="put"
+                                    >
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-first-name">
+                                                Nama depan
+                                            </Label>
+                                            <Input
+                                                id="p-first-name"
+                                                name="first_name"
+                                                defaultValue={
+                                                    employee.first_name ?? ''
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-last-name">
+                                                Nama belakang
+                                            </Label>
+                                            <Input
+                                                id="p-last-name"
+                                                name="last_name"
+                                                defaultValue={
+                                                    employee.last_name ?? ''
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-preferred-name">
+                                                Nama panggilan
+                                            </Label>
+                                            <Input
+                                                id="p-preferred-name"
+                                                name="preferred_name"
+                                                defaultValue={
+                                                    employee.preferred_name ??
+                                                    ''
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-gender">
+                                                Jenis kelamin
+                                            </Label>
+                                            <select
+                                                id="p-gender"
+                                                name="gender"
+                                                className="h-9 rounded-md border bg-background px-3 text-sm"
+                                                defaultValue={
+                                                    employee.gender ?? ''
+                                                }
+                                            >
+                                                <option value="">—</option>
+                                                <option value="male">
+                                                    Laki-laki
+                                                </option>
+                                                <option value="female">
+                                                    Perempuan
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-dob">
+                                                Tanggal lahir
+                                            </Label>
+                                            <Input
+                                                id="p-dob"
+                                                name="date_of_birth"
+                                                type="date"
+                                                defaultValue={
+                                                    employee.date_of_birth ?? ''
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-pob">
+                                                Tempat lahir
+                                            </Label>
+                                            <Input
+                                                id="p-pob"
+                                                name="place_of_birth"
+                                                defaultValue={
+                                                    employee.place_of_birth ??
+                                                    ''
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-nationality">
+                                                Kewarganegaraan
+                                            </Label>
+                                            <Input
+                                                id="p-nationality"
+                                                name="nationality"
+                                                defaultValue={
+                                                    employee.nationality ?? ''
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-marital">
+                                                Status pernikahan
+                                            </Label>
+                                            <select
+                                                id="p-marital"
+                                                name="marital_status"
+                                                className="h-9 rounded-md border bg-background px-3 text-sm"
+                                                defaultValue={
+                                                    employee.marital_status ??
+                                                    ''
+                                                }
+                                            >
+                                                <option value="">—</option>
+                                                <option value="single">
+                                                    Lajang
+                                                </option>
+                                                <option value="married">
+                                                    Menikah
+                                                </option>
+                                                <option value="divorced">
+                                                    Cerai
+                                                </option>
+                                                <option value="widowed">
+                                                    Janda/Duda
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-phone">
+                                                Telepon
+                                            </Label>
+                                            <Input
+                                                id="p-phone"
+                                                name="phone"
+                                                defaultValue={
+                                                    employee.phone ?? ''
+                                                }
+                                            />
+                                        </div>
+                                        {canSeeSensitive ? (
+                                            <>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-personal-email">
+                                                        Email pribadi
+                                                    </Label>
+                                                    <Input
+                                                        id="p-personal-email"
+                                                        name="personal_email"
+                                                        type="email"
+                                                        defaultValue={
+                                                            employee.personal_email ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1.5 md:col-span-2">
+                                                    <Label htmlFor="p-address">
+                                                        Alamat
+                                                    </Label>
+                                                    <Input
+                                                        id="p-address"
+                                                        name="address"
+                                                        defaultValue={
+                                                            employee.address ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-city">
+                                                        Kota
+                                                    </Label>
+                                                    <Input
+                                                        id="p-city"
+                                                        name="city"
+                                                        defaultValue={
+                                                            employee.city ?? ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-province">
+                                                        Provinsi
+                                                    </Label>
+                                                    <Input
+                                                        id="p-province"
+                                                        name="province"
+                                                        defaultValue={
+                                                            employee.province ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-postal">
+                                                        Kode pos
+                                                    </Label>
+                                                    <Input
+                                                        id="p-postal"
+                                                        name="postal_code"
+                                                        defaultValue={
+                                                            employee.postal_code ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : null}
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="p-country">
+                                                Negara
+                                            </Label>
+                                            <Input
+                                                id="p-country"
+                                                name="country"
+                                                defaultValue={
+                                                    employee.country ?? ''
+                                                }
+                                            />
+                                        </div>
+                                        {canSeeSensitive ? (
+                                            <>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-ec-name">
+                                                        Kontak darurat — nama
+                                                    </Label>
+                                                    <Input
+                                                        id="p-ec-name"
+                                                        name="emergency_contact_name"
+                                                        defaultValue={
+                                                            employee.emergency_contact_name ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-ec-rel">
+                                                        Kontak darurat —
+                                                        hubungan
+                                                    </Label>
+                                                    <Input
+                                                        id="p-ec-rel"
+                                                        name="emergency_contact_relationship"
+                                                        defaultValue={
+                                                            employee.emergency_contact_relationship ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1.5">
+                                                    <Label htmlFor="p-ec-phone">
+                                                        Kontak darurat — telepon
+                                                    </Label>
+                                                    <Input
+                                                        id="p-ec-phone"
+                                                        name="emergency_contact_phone"
+                                                        defaultValue={
+                                                            employee.emergency_contact_phone ??
+                                                            ''
+                                                        }
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : null}
+                                        <Button className="md:col-span-3 md:justify-self-start">
+                                            Simpan data pribadi
+                                        </Button>
+                                    </Form>
                                 </CardContent>
                             </Card>
                         ) : null}
@@ -696,16 +981,13 @@ export default function EmployeeDetail({
                                                 <Label htmlFor="edit-salary">
                                                     Gaji pokok
                                                 </Label>
-                                                <Input
+                                                <CurrencyInput
                                                     defaultValue={
                                                         employee.basic_salary
                                                     }
                                                     id="edit-salary"
-                                                    min={0}
                                                     name="basic_salary"
                                                     required
-                                                    step="0.01"
-                                                    type="number"
                                                 />
                                             </div>
                                         ) : null}
@@ -732,6 +1014,42 @@ export default function EmployeeDetail({
                                                         value={role}
                                                     >
                                                         {role}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="grid gap-1.5">
+                                            <Label htmlFor="edit-status">
+                                                Status kepegawaian
+                                            </Label>
+                                            <select
+                                                className="h-9 rounded-md border bg-background px-3 text-sm"
+                                                defaultValue={
+                                                    employee.employment_status ??
+                                                    'active'
+                                                }
+                                                id="edit-status"
+                                                name="employment_status"
+                                            >
+                                                {[
+                                                    ['active', 'Aktif'],
+                                                    ['probation', 'Probation'],
+                                                    [
+                                                        'on_leave',
+                                                        'Cuti panjang',
+                                                    ],
+                                                    ['suspended', 'Diskors'],
+                                                    ['resigned', 'Resign'],
+                                                    [
+                                                        'terminated',
+                                                        'Diberhentikan',
+                                                    ],
+                                                ].map(([value, label]) => (
+                                                    <option
+                                                        key={value}
+                                                        value={value}
+                                                    >
+                                                        {label}
                                                     </option>
                                                 ))}
                                             </select>
@@ -1024,6 +1342,97 @@ export default function EmployeeDetail({
                                 </CardContent>
                             </Card>
 
+                            {canUpdate ? (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">
+                                            Ubah data bank & pajak
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Form
+                                            action={`/employees/${employee.id}/profile`}
+                                            className="grid gap-3 md:grid-cols-3"
+                                            method="put"
+                                        >
+                                            {({ errors, processing }) => (
+                                                <>
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="c-bank-name">
+                                                            Bank
+                                                        </Label>
+                                                        <Input
+                                                            defaultValue={
+                                                                employee.bank_name ??
+                                                                ''
+                                                            }
+                                                            id="c-bank-name"
+                                                            name="bank_name"
+                                                        />
+                                                    </div>
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="c-bank-account">
+                                                            Nomor rekening
+                                                        </Label>
+                                                        <Input
+                                                            defaultValue={
+                                                                employee.bank_account ??
+                                                                ''
+                                                            }
+                                                            id="c-bank-account"
+                                                            name="bank_account"
+                                                        />
+                                                    </div>
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="c-bank-holder">
+                                                            Atas nama
+                                                        </Label>
+                                                        <Input
+                                                            defaultValue={
+                                                                employee.bank_account_holder ??
+                                                                ''
+                                                            }
+                                                            id="c-bank-holder"
+                                                            name="bank_account_holder"
+                                                        />
+                                                    </div>
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="c-tax-number">
+                                                            NPWP
+                                                        </Label>
+                                                        <Input
+                                                            defaultValue={
+                                                                employee.tax_number ??
+                                                                ''
+                                                            }
+                                                            id="c-tax-number"
+                                                            name="tax_number"
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        className="md:col-span-3 md:justify-self-start"
+                                                        disabled={processing}
+                                                    >
+                                                        Simpan data bank
+                                                    </Button>
+                                                    {Object.keys(errors)
+                                                        .length > 0 ? (
+                                                        <p className="text-sm text-destructive md:col-span-3">
+                                                            Periksa kembali
+                                                            data formulir.
+                                                        </p>
+                                                    ) : null}
+                                                </>
+                                            )}
+                                        </Form>
+                                        <p className="mt-3 text-sm text-muted-foreground">
+                                            Untuk mengubah gaji pokok, buka
+                                            tab Kepegawaian.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            ) : null}
+
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-base">
@@ -1258,6 +1667,20 @@ export default function EmployeeDetail({
                             tersimpan.
                         </DialogDescription>
                     </DialogHeader>
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="deactivate-status">Status keluar</Label>
+                        <select
+                            id="deactivate-status"
+                            className="h-9 rounded-md border bg-background px-3 text-sm"
+                            value={deactivateStatus}
+                            onChange={(event) =>
+                                setDeactivateStatus(event.target.value)
+                            }
+                        >
+                            <option value="resigned">Resign</option>
+                            <option value="terminated">Diberhentikan</option>
+                        </select>
+                    </div>
                     <div className="grid gap-1.5">
                         <Label htmlFor="deactivate-reason">Alasan</Label>
                         <Input

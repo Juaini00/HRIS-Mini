@@ -1,19 +1,22 @@
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import type { FlashToast } from '@/types/ui';
+
+type FlashProps = { success?: string | null; error?: string | null };
 
 export function useFlashToast(): void {
     useEffect(() => {
-        return router.on('flash', (event) => {
-            const flash = (event as CustomEvent).detail?.flash;
-            const data = flash?.toast as FlashToast | undefined;
+        return router.on('success', (event) => {
+            const flash = ((event as CustomEvent).detail?.page?.props?.flash ??
+                {}) as FlashProps;
 
-            if (!data) {
-                return;
+            if (flash.success) {
+                toast.success(flash.success);
             }
 
-            toast[data.type](data.message);
+            if (flash.error) {
+                toast.error(flash.error);
+            }
         });
     }, []);
 }

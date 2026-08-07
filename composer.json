@@ -56,6 +56,11 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
+        "refresh": [
+            "composer install",
+            "@php artisan optimize:clear",
+            "npm install"
+        ],
         "lint": [
             "pint --parallel"
         ],
