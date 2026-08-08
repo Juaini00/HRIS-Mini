@@ -17,6 +17,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Holiday;
 use App\Models\LeaveBalance;
+use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -230,6 +231,10 @@ class TransactionalDataSeeder extends Seeder
      */
     private function leaveRequests(Collection $employees): void
     {
+        if (LeaveRequest::whereIn('employee_id', $employees->take(30)->pluck('id'))->exists()) {
+            return;
+        }
+
         $annual = LeaveType::where('code', 'ANN')->first();
         $sick = LeaveType::where('code', 'SICK')->first();
 
