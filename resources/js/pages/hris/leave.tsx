@@ -304,9 +304,10 @@ export default function Leave({
                                                             </Tooltip>
                                                         </>
                                                     )}
-                                                {['pending', 'approved'].includes(
-                                                    r.status,
-                                                ) && (
+                                                {[
+                                                    'pending',
+                                                    'approved',
+                                                ].includes(r.status) && (
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <Button
@@ -320,7 +321,9 @@ export default function Leave({
                                                                             'Alasan pembatalan',
                                                                         );
 
-                                                                    if (reason) {
+                                                                    if (
+                                                                        reason
+                                                                    ) {
                                                                         router.patch(
                                                                             `/leave/${r.id}/cancel`,
                                                                             {

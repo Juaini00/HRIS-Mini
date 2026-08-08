@@ -61,6 +61,7 @@ export default function Employees({
             300,
         );
     };
+
     return (
         <>
             <Head title="Karyawan" />
@@ -263,6 +264,7 @@ export default function Employees({
                                                         e.employment_status ??
                                                             'active'
                                                     ] ?? STATUS_META.active;
+
                                                 return (
                                                     <Badge
                                                         variant={meta.variant}

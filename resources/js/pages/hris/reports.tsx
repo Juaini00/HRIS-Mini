@@ -53,8 +53,7 @@ const REPORT_DESCRIPTIONS: Record<string, string> = {
         'Total pemakaian cuti dikelompokkan per jenis cuti dalam satu tahun.',
     'leave-balances':
         'Sisa saldo cuti setiap karyawan untuk tahun yang dipilih.',
-    'payroll-summary':
-        'Ringkasan total penggajian untuk satu periode payroll.',
+    'payroll-summary': 'Ringkasan total penggajian untuk satu periode payroll.',
     'payroll-details':
         'Rincian gaji per karyawan (pendapatan, potongan, gaji bersih) untuk satu periode.',
     'announcement-readership':
@@ -175,7 +174,11 @@ export default function Reports({ reports, scope, payrollPeriods }: Props) {
                                         </div>
                                         {REPORT_DESCRIPTIONS[report.key] ? (
                                             <p className="text-sm text-muted-foreground">
-                                                {REPORT_DESCRIPTIONS[report.key]}
+                                                {
+                                                    REPORT_DESCRIPTIONS[
+                                                        report.key
+                                                    ]
+                                                }
                                             </p>
                                         ) : null}
                                     </CardHeader>

@@ -1418,16 +1418,16 @@ export default function EmployeeDetail({
                                                     {Object.keys(errors)
                                                         .length > 0 ? (
                                                         <p className="text-sm text-destructive md:col-span-3">
-                                                            Periksa kembali
-                                                            data formulir.
+                                                            Periksa kembali data
+                                                            formulir.
                                                         </p>
                                                     ) : null}
                                                 </>
                                             )}
                                         </Form>
                                         <p className="mt-3 text-sm text-muted-foreground">
-                                            Untuk mengubah gaji pokok, buka
-                                            tab Kepegawaian.
+                                            Untuk mengubah gaji pokok, buka tab
+                                            Kepegawaian.
                                         </p>
                                     </CardContent>
                                 </Card>
